@@ -164,11 +164,10 @@ pub(crate) fn parse_files(nzb: &Document) -> Result<Vec<File>, InvalidNZBError> 
 ///
 /// This function is pretty much a straight port of the same from SABnzbd:
 /// https://github.com/sabnzbd/sabnzbd/blob/297455cd35c71962d39a36b7f99622f905d2234e/sabnzbd/deobfuscate_filenames.py#L104
-/// 
+///
 /// The original accepts either a complete path or just the stem (basename) but
 /// this ONLY accepts the latter.
 pub(crate) fn sabnzbd_is_obfuscated(filestem: &str) -> bool {
-
     // First: the patterns that are certainly obfuscated:
 
     // ...blabla.H.264/b082fa0beaa644d3aa01045d5b8d0b36.mkv is certainly obfuscated
