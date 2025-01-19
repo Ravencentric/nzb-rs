@@ -9,6 +9,19 @@ While the parser API is similar to the original, it is not identical. Additional
 
 The heart of this library is the [`NZB::parse`] method, which handles parsing NZB files into structured data.
 
+## Installation
+
+To install `nzb-rs`, add the following to your `Cargo.toml`:
+
+```toml
+[dependencies]
+nzb-rs = "0.1.1"
+```
+
+Optional features:
+
+- `serde`: Enables serialization and deserialization via [serde](https://crates.io/crates/serde).
+
 ## Example
 
 ```rust
@@ -52,9 +65,13 @@ use std::path::Path;
 use std::str::FromStr;
 use thiserror::Error;
 
+#[cfg(feature = "serde")]
+use serde::{Deserialize, Serialize};
+
 /// An error type representing an invalid NZB.
 #[derive(Error, Clone, Debug, Default, PartialEq, Eq, PartialOrd, Ord, Hash)]
 #[error("{message}")]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct InvalidNZBError {
     /// Error message describing why the NZB is invalid.
     message: String,
@@ -70,6 +87,7 @@ impl InvalidNZBError {
 
 /// Represents optional creator-definable metadata in an NZB.
 #[derive(Clone, Debug, Default, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct Meta {
     pub title: Option<String>,
     pub passwords: Vec<String>,
@@ -96,6 +114,7 @@ impl Meta {
 
 /// Represents a single segment of a file in an NZB.
 #[derive(Clone, Debug, Default, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct Segment {
     /// Size of the segment in bytes.
     pub size: u32,
@@ -118,6 +137,7 @@ impl Segment {
 
 /// Represents a complete file, consisting of segments that make up a file.
 #[derive(Clone, Debug, Default, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct File {
     /// The poster of the file.
     pub poster: String,
@@ -213,6 +233,7 @@ impl File {
 
 /// Represents an NZB.
 #[derive(Clone, Debug, Default, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct NZB {
     /// Optional creator-definable metadata for the contents of the NZB.
     pub meta: Meta,

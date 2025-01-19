@@ -11,15 +11,20 @@ nzb-rs
 This library is a partial port of the Python [`nzb`](https://pypi.org/project/nzb/) library.  
 While the parser API is similar to the original, it is not identical. Additionally, the meta editor API has not been implemented.
 
+The heart of this library is the [`NZB::parse`] method, which handles parsing NZB files into structured data.
 
 ## Installation
 
-Add this to your `Cargo.toml`:
+To install `nzb-rs`, add the following to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-nzb-rs = "0.1.0"
+nzb-rs = "0.1.1"
 ```
+
+Optional features:
+
+- `serde`: Enables serialization and deserialization via [serde](https://crates.io/crates/serde).
 
 ## Example
 
