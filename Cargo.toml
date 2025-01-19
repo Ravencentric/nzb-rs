@@ -1,6 +1,6 @@
 [package]
 name = "nzb-rs"
-version = "0.1.0"
+version = "0.1.1"
 description = "A spec compliant parser for NZB files"
 authors = ["Ravencentric <me@ravencentric.cc>"]
 readme = "README.md"
@@ -8,7 +8,7 @@ license = "MIT OR Apache-2.0"
 edition = "2021"
 keywords = ["nzb", "usenet", "parser"]
 categories = ["parser-implementations", "parsing"]
-repository = "https://github.com/bitflags/bitflags"
+repository = "https://github.com/Ravencentric/nzb-rs"
 documentation = "https://docs.rs/nzb-rs"
 
 [dependencies]
