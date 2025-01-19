@@ -53,7 +53,7 @@ use std::str::FromStr;
 use thiserror::Error;
 
 /// An error type representing an invalid NZB.
-#[derive(Debug, Error, Clone, Hash, Default, PartialEq, Eq)]
+#[derive(Error, Clone, Debug, Default, PartialEq, Eq, PartialOrd, Ord, Hash)]
 #[error("{message}")]
 pub struct InvalidNZBError {
     /// Error message describing why the NZB is invalid.
@@ -69,7 +69,7 @@ impl InvalidNZBError {
 }
 
 /// Represents optional creator-definable metadata in an NZB.
-#[derive(Debug, Clone, Hash, PartialEq, Eq, Default)]
+#[derive(Clone, Debug, Default, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct Meta {
     pub title: Option<String>,
     pub passwords: Vec<String>,
@@ -95,7 +95,7 @@ impl Meta {
 }
 
 /// Represents a single segment of a file in an NZB.
-#[derive(Debug, Clone, Hash, Default, PartialEq, Eq)]
+#[derive(Clone, Debug, Default, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct Segment {
     /// Size of the segment in bytes.
     pub size: u32,
@@ -117,7 +117,7 @@ impl Segment {
 }
 
 /// Represents a complete file, consisting of segments that make up a file.
-#[derive(Debug, Clone, Hash, Default, PartialEq, Eq)]
+#[derive(Clone, Debug, Default, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct File {
     /// The poster of the file.
     pub poster: String,
@@ -212,7 +212,7 @@ impl File {
 }
 
 /// Represents an NZB.
-#[derive(Debug, Clone, Hash, Default, PartialEq, Eq)]
+#[derive(Clone, Debug, Default, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct NZB {
     /// Optional creator-definable metadata for the contents of the NZB.
     pub meta: Meta,
