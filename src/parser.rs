@@ -74,6 +74,18 @@ pub(crate) fn parse_metadata(nzb: &Document) -> Meta {
     }
 }
 
+/// Parses the `<file>...</file>` field present in an NZB.
+///
+/// ```xml
+/// <?xml version="1.0" encoding="iso-8859-1" ?>
+/// <!DOCTYPE nzb PUBLIC "-//newzBin//DTD NZB 1.1//EN" "http://www.newzbin.com/DTD/nzb/nzb-1.1.dtd">
+/// <nzb xmlns="http://www.newzbin.com/DTD/2003/nzb">
+///     <file poster="Joe Bloggs &lt;bloggs@nowhere.example&gt;" date="1071674882" subject="Here's your file!  abc-mr2a.r01 (1/2)">
+///         <groups>[...]</groups>
+///         <segments>[...]</segments>
+///     </file>
+/// </nzb>
+/// ```
 pub(crate) fn parse_files(nzb: &Document) -> Result<Vec<File>, InvalidNZBError> {
     let mut files = Vec::new();
     let file_nodes = nzb.descendants().filter(|n| n.has_tag_name("file"));
@@ -149,9 +161,13 @@ pub(crate) fn parse_files(nzb: &Document) -> Result<Vec<File>, InvalidNZBError> 
 }
 
 /// Return [`true`] if the file is obfuscated, [`false`] otherwise.
+///
+/// This function is pretty much a straight port of the same from SABnzbd:
+/// https://github.com/sabnzbd/sabnzbd/blob/297455cd35c71962d39a36b7f99622f905d2234e/sabnzbd/deobfuscate_filenames.py#L104
+/// 
+/// The original accepts either a complete path or just the stem (basename) but
+/// this ONLY accepts the latter.
 pub(crate) fn sabnzbd_is_obfuscated(filestem: &str) -> bool {
-    // This function is pretty much a straight port of the same from SABnzbd:
-    // https://github.com/sabnzbd/sabnzbd/blob/297455cd35c71962d39a36b7f99622f905d2234e/sabnzbd/deobfuscate_filenames.py#L104
 
     // First: the patterns that are certainly obfuscated:
 
