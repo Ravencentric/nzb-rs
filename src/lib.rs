@@ -74,7 +74,7 @@ use serde::{Deserialize, Serialize};
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct InvalidNZBError {
     /// Error message describing why the NZB is invalid.
-    message: String,
+    pub message: String,
 }
 impl InvalidNZBError {
     /// Creates a new `InvalidNZBError` with the given error message.
@@ -175,7 +175,7 @@ impl File {
     }
 
     /// Complete name of the file with it's extension extracted from the subject.
-    /// May return `None` if it fails to extract the name.
+    /// May return [`None`] if it fails to extract the name.
     pub fn name(&self) -> Option<&str> {
         let re_subject_filename_quotes = regex!(r#""([^"]*)""#);
         let re_subject_basic_filename =
@@ -349,7 +349,7 @@ impl NZB {
             .collect()
     }
 
-    /// Percentage of the size of all the `.par2` files relative to the total size.
+    /// Total size of all the `.par2` files.
     pub fn par2_size(&self) -> u64 {
         self.files.iter().filter(|f| f.is_par2()).map(|file| file.size()).sum()
     }
