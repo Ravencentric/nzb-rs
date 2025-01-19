@@ -11,8 +11,6 @@ nzb-rs
 This library is a partial port of the Python [`nzb`](https://pypi.org/project/nzb/) library.  
 While the parser API is similar to the original, it is not identical. Additionally, the meta editor API has not been implemented.
 
-The heart of this library is the [`NZB::parse`] method, which handles parsing NZB files into structured data.
-
 ## Installation
 
 To install `nzb-rs`, add the following to your `Cargo.toml`:
