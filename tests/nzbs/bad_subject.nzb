@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="iso-8859-1" ?>
+<!DOCTYPE nzb PUBLIC "-//newzBin//DTD NZB 1.1//EN" "http://www.newzbin.com/DTD/nzb/nzb-1.1.dtd">
+<nzb xmlns="http://www.newzbin.com/DTD/2003/nzb">
+    <file poster="FbjZNcpKEpnyhZeY2T9J6zmoeYRuQvUF" date="1071674882" subject="WQDMm92SQnbDguxHUwXugqbku5Z22JSs">
+        <groups>
+            <group>alt.binaries.newzbin</group>
+            <group>alt.binaries.mojo</group>
+        </groups>
+        <segments>
+            <segment bytes="102394" number="1">123456789abcdef@news.newzbin.com</segment>
+            <segment bytes="4501" number="2">987654321fedbca@news.newzbin.com</segment>
+        </segments>
+    </file>
+</nzb>
