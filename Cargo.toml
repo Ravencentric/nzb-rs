@@ -26,4 +26,4 @@ serde = ["dep:serde", "chrono/serde"]
 unsafe_code = "forbid"
 
 [dev-dependencies]
-serde_json = "1.0.136"
+serde_json = "1.0.137"
