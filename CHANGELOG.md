@@ -12,7 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 - tests
-- remove NZB.filenames and NZB.extensions
+- remove NZB.filestems and NZB.extensions
 
 ### Other
 
