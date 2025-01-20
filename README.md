@@ -42,7 +42,6 @@ fn main() -> Result<(), InvalidNZBError> {
                 <segments>
                     <segment bytes="739067" number="1">9cacde4c986547369becbf97003fb2c5-9483514693959@example</segment>
                     <segment bytes="739549" number="2">70a3a038ce324e618e2751e063d6a036-7285710986748@example</segment>
-    
                 </segments>
             </file>
         </nzb>
