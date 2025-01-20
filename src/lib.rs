@@ -319,21 +319,6 @@ impl NZB {
         self.files.iter().filter_map(|f| f.name()).unique().sorted().collect()
     }
 
-    /// Vector of unique file stems (basename) across all the files in the NZB.
-    pub fn filestems(&self) -> Vec<&str> {
-        self.files.iter().filter_map(|f| f.stem()).unique().sorted().collect()
-    }
-
-    /// Vector of unique file extensions across all the files in the NZB.
-    pub fn extensions(&self) -> Vec<&str> {
-        self.files
-            .iter()
-            .filter_map(|f| f.extension())
-            .unique()
-            .sorted()
-            .collect()
-    }
-
     /// Vector of unique posters across all the files in the NZB.
     pub fn posters(&self) -> Vec<&str> {
         self.files.iter().map(|f| f.poster.as_str()).unique().sorted().collect()
