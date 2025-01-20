@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.0](https://github.com/Ravencentric/nzb-rs/compare/v0.1.3...v0.2.0) - 2025-01-20
+
+### Fixed
+
+- tests
+- remove NZB.filestems and NZB.extensions
+
+### Other
+
+- update deps
+- use cached install
+- remove paths
+- use pat
+
 ## [0.1.3](https://github.com/Ravencentric/nzb-rs/compare/v0.1.2...v0.1.3) - 2025-01-19
 
 ### Fixed
