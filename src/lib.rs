@@ -176,6 +176,7 @@ impl File {
     /// Complete name of the file with it's extension extracted from the subject.
     /// May return [`None`] if it fails to extract the name.
     pub fn name(&self) -> Option<&str> {
+        // https://github.com/sabnzbd/sabnzbd/blob/02b4a116dd4b46b2d2f33f7bbf249f2294458f2e/sabnzbd/nzbstuff.py#L104-L106
         let re_subject_filename_quotes = regex!(r#""([^"]*)""#);
         let re_subject_basic_filename =
             regex!(r"\b([\w\-+()' .,]+(?:\[[\w\-/+()' .,]*][\w\-+()' .,]*)*\.[A-Za-z0-9]{2,4})\b");
@@ -193,19 +194,15 @@ impl File {
     /// Base name of the file without it's extension extracted from the [`File::name`].
     /// May return [`None`] if it fails to extract the stem.
     pub fn stem(&self) -> Option<&str> {
-        if let Some(name) = self.name() {
-            return Path::new(name).file_stem().map(|f| f.to_str())?;
-        }
-        None
+        self.name()
+            .and_then(|name| Path::new(name).file_stem().and_then(|f| f.to_str()))
     }
 
     ///  Extension of the file extracted from the [`File::name`].
     /// May return [`None`] if it fails to extract the extension.
     pub fn extension(&self) -> Option<&str> {
-        if let Some(name) = self.name() {
-            return Path::new(name).extension().map(|f| f.to_str())?;
-        }
-        None
+        self.name()
+            .and_then(|name| Path::new(name).extension().and_then(|f| f.to_str()))
     }
 
     /// Return [`true`] if the file is a `.par2` file, [`false`] otherwise.
@@ -216,6 +213,7 @@ impl File {
 
     /// Return [`true`] if the file is a `.rar` file, [`false`] otherwise.
     pub fn is_rar(&self) -> bool {
+        // https://github.com/sabnzbd/sabnzbd/blob/02b4a116dd4b46b2d2f33f7bbf249f2294458f2e/sabnzbd/nzbstuff.py#L107
         let re = regex!(r"(\.rar|\.r\d\d|\.s\d\d|\.t\d\d|\.u\d\d|\.v\d\d)$"i);
         self.name().is_some_and(|name| re.is_match(name))
     }
