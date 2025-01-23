@@ -27,9 +27,9 @@ Optional features:
 ## Example
 
 ```rust
-use nzb_rs::{InvalidNZBError, NZB};
+use nzb_rs::{InvalidNzbError, Nzb};
 
-fn main() -> Result<(), InvalidNZBError> {
+fn main() -> Result<(), InvalidNzbError> {
     let xml = r#"
         <?xml version="1.0" encoding="UTF-8"?>
         <!DOCTYPE nzb PUBLIC "-//newzBin//DTD NZB 1.1//EN" "http://www.newzbin.com/DTD/nzb/nzb-1.1.dtd">
@@ -46,7 +46,7 @@ fn main() -> Result<(), InvalidNZBError> {
             </file>
         </nzb>
         "#;
-    let nzb = NZB::parse(xml)?;
+    let nzb = Nzb::parse(xml)?;
     println!("{:#?}", nzb);
     assert_eq!(nzb.file().name(), Some("Big Buck Bunny - S01E01.mkv"));
     Ok(())
@@ -64,9 +64,9 @@ fn main() -> Result<(), InvalidNZBError> {
 Licensed under either of
 
  * Apache License, Version 2.0
-   ([LICENSE-APACHE](https://github.com/Ravencentric/nzb-rs/blob/main/LICENSE-APACHE) or http://www.apache.org/licenses/LICENSE-2.0)
+   ([LICENSE-APACHE](https://github.com/Ravencentric/nzb-rs/blob/main/LICENSE-APACHE) or <https://www.apache.org/licenses/LICENSE-2.0>)
  * MIT license
-   ([LICENSE-MIT](https://github.com/Ravencentric/nzb-rs/blob/main/LICENSE-MIT) or http://opensource.org/licenses/MIT)
+   ([LICENSE-MIT](https://github.com/Ravencentric/nzb-rs/blob/main/LICENSE-MIT) or <https://opensource.org/license/MIT>)
 
 at your option.
 

@@ -25,9 +25,9 @@ Optional features:
 ## Example
 
 ```rust
-use nzb_rs::{InvalidNZBError, NZB};
+use nzb_rs::{InvalidNzbError, Nzb};
 
-fn main() -> Result<(), InvalidNZBError> {
+fn main() -> Result<(), InvalidNzbError> {
     let xml = r#"
         <?xml version="1.0" encoding="UTF-8"?>
         <!DOCTYPE nzb PUBLIC "-//newzBin//DTD NZB 1.1//EN" "http://www.newzbin.com/DTD/nzb/nzb-1.1.dtd">
@@ -44,7 +44,7 @@ fn main() -> Result<(), InvalidNZBError> {
             </file>
         </nzb>
         "#;
-    let nzb = NZB::parse(xml)?;
+    let nzb = Nzb::parse(xml)?;
     println!("{:#?}", nzb);
     assert_eq!(nzb.file().name(), Some("Big Buck Bunny - S01E01.mkv"));
     Ok(())
@@ -71,12 +71,12 @@ use serde::{Deserialize, Serialize};
 #[derive(Error, Clone, Debug, Default, PartialEq, Eq, PartialOrd, Ord, Hash)]
 #[error("{message}")]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-pub struct InvalidNZBError {
+pub struct InvalidNzbError {
     /// Error message describing why the NZB is invalid.
     pub message: String,
 }
-impl InvalidNZBError {
-    /// Creates a new `InvalidNZBError` with the given error message.
+impl InvalidNzbError {
+    /// Creates a new `InvalidNzbError` with the given error message.
     pub fn new(message: impl Into<String>) -> Self {
         Self {
             message: message.into(),
@@ -233,46 +233,40 @@ impl File {
 /// Represents an NZB.
 #[derive(Clone, Debug, Default, PartialEq, Eq, PartialOrd, Ord, Hash)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-pub struct NZB {
+pub struct Nzb {
     /// Optional creator-definable metadata for the contents of the NZB.
     pub meta: Meta,
     /// File objects representing the files included in the NZB.
     pub files: Vec<File>,
 }
 
-impl FromStr for NZB {
-    type Err = InvalidNZBError;
+impl FromStr for Nzb {
+    type Err = InvalidNzbError;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         let xml = sanitize_xml(s);
-        let nzb = match Document::parse(xml) {
-            Ok(doc) => doc,
-            Err(err) => return Err(InvalidNZBError::new(err.to_string())),
-        };
+        let nzb = Document::parse(xml).map_err(|e| InvalidNzbError::new(e.to_string()))?;
         let meta = parse_metadata(&nzb);
-        let files = match parse_files(&nzb) {
-            Ok(files) => files,
-            Err(err) => return Err(InvalidNZBError::new(err.to_string())),
-        };
-        Ok(NZB { meta, files })
+        let files = parse_files(&nzb).map_err(|e| InvalidNzbError::new(e.to_string()))?;
+        Ok(Self { meta, files })
     }
 }
 
-impl NZB {
-    /// Parses a string into an [`NZB`] instance.
+impl Nzb {
+    /// Parses a string into an [`Nzb`] instance.
     ///
     /// # Errors
     ///
-    /// This function returns an [`InvalidNZBError`] in the following cases:
+    /// This function returns an [`InvalidNzbError`] in the following cases:
     /// - If the XML is malformed and cannot be parsed.
     /// - If the NZB structure is invalid or missing required components.
     ///
     /// # Example
     ///
     /// ```rust
-    /// use nzb_rs::{InvalidNZBError, NZB};
+    /// use nzb_rs::{InvalidNzbError, Nzb};
     ///
-    /// fn main() -> Result<(), InvalidNZBError> {
+    /// fn main() -> Result<(), InvalidNzbError> {
     ///     let xml = r#"
     ///         <?xml version="1.0" encoding="UTF-8"?>
     ///         <!DOCTYPE nzb PUBLIC "-//newzBin//DTD NZB 1.1//EN" "http://www.newzbin.com/DTD/nzb/nzb-1.1.dtd">
@@ -289,13 +283,13 @@ impl NZB {
     ///             </file>
     ///         </nzb>
     ///         "#;
-    ///     let nzb = NZB::parse(xml)?;
+    ///     let nzb = Nzb::parse(xml)?;
     ///     println!("{:#?}", nzb);
     ///     assert_eq!(nzb.file().name(), Some("Big Buck Bunny - S01E01.mkv"));
     ///     Ok(())
     /// }
     /// ```
-    pub fn parse(xml: impl AsRef<str>) -> Result<Self, InvalidNZBError> {
+    pub fn parse(xml: impl AsRef<str>) -> Result<Self, InvalidNzbError> {
         Self::from_str(xml.as_ref())
     }
 

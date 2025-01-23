@@ -1,7 +1,7 @@
 mod common;
 
 use common::get_nzb_string;
-use nzb_rs::{InvalidNZBError, NZB};
+use nzb_rs::{InvalidNzbError, Nzb};
 
 #[test]
 fn test_invalid_xml() {
@@ -27,7 +27,7 @@ fn test_invalid_xml() {
         </file>
     "#;
 
-    let nzb = NZB::parse(invalid_xml);
+    let nzb = Nzb::parse(invalid_xml);
     assert!(nzb.is_err());
 }
 
@@ -49,50 +49,50 @@ fn test_valid_xml_but_invalid_nzb() {
     </nzb>
     "#;
 
-    let nzb = NZB::parse(valid_xml_but_invalid_nzb);
+    let nzb = Nzb::parse(valid_xml_but_invalid_nzb);
     assert!(nzb.is_err());
 }
 
 #[test]
 fn test_malformed_files() {
     let file = get_nzb_string("malformed_files.nzb");
-    let nzb = NZB::parse(file);
+    let nzb = Nzb::parse(file);
     assert!(nzb.is_err());
     assert_eq!(
         nzb.unwrap_err(),
-        InvalidNZBError::new("Missing or malformed <file>...</file>!")
+        InvalidNzbError::new("Missing or malformed <file>...</file>!")
     );
 }
 
 #[test]
 fn test_malformed_files2() {
     let file = get_nzb_string("malformed_files2.nzb");
-    let nzb = NZB::parse(file);
+    let nzb = Nzb::parse(file);
     assert!(nzb.is_err());
     assert_eq!(
         nzb.unwrap_err(),
-        InvalidNZBError::new("Missing or malformed <groups>...</groups>!")
+        InvalidNzbError::new("Missing or malformed <groups>...</groups>!")
     );
 }
 
 #[test]
 fn test_malformed_groups() {
     let file = get_nzb_string("malformed_groups.nzb");
-    let nzb = NZB::parse(file);
+    let nzb = Nzb::parse(file);
     assert!(nzb.is_err());
     assert_eq!(
         nzb.unwrap_err(),
-        InvalidNZBError::new("Missing or malformed <groups>...</groups>!")
+        InvalidNzbError::new("Missing or malformed <groups>...</groups>!")
     );
 }
 
 #[test]
 fn test_malformed_segments() {
     let file = get_nzb_string("malformed_segments.nzb");
-    let nzb = NZB::parse(file);
+    let nzb = Nzb::parse(file);
     assert!(nzb.is_err());
     assert_eq!(
         nzb.unwrap_err(),
-        InvalidNZBError::new("Missing or malformed <segments>...</segments>!")
+        InvalidNzbError::new("Missing or malformed <segments>...</segments>!")
     );
 }

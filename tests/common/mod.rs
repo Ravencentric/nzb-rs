@@ -1,4 +1,4 @@
-use nzb_rs::NZB;
+use nzb_rs::Nzb;
 use std::{env, fs};
 
 pub fn get_nzb_string(file: &str) -> String {
@@ -7,6 +7,6 @@ pub fn get_nzb_string(file: &str) -> String {
 }
 
 #[allow(dead_code)]
-pub fn get_nzb(nzb: &str) -> NZB {
-    NZB::parse(get_nzb_string(nzb)).unwrap()
+pub fn get_nzb(nzb: &str) -> Nzb {
+    Nzb::parse(get_nzb_string(nzb)).unwrap()
 }

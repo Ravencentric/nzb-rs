@@ -1,4 +1,4 @@
-use crate::{File, InvalidNZBError, Meta, Segment};
+use crate::{File, InvalidNzbError, Meta, Segment};
 use chrono::DateTime;
 use lazy_regex::regex;
 use roxmltree::Document;
@@ -86,7 +86,7 @@ pub(crate) fn parse_metadata(nzb: &Document) -> Meta {
 ///     </file>
 /// </nzb>
 /// ```
-pub(crate) fn parse_files(nzb: &Document) -> Result<Vec<File>, InvalidNZBError> {
+pub(crate) fn parse_files(nzb: &Document) -> Result<Vec<File>, InvalidNzbError> {
     let mut files = Vec::new();
     let file_nodes = nzb.descendants().filter(|n| n.has_tag_name("file"));
 
@@ -108,7 +108,7 @@ pub(crate) fn parse_files(nzb: &Document) -> Result<Vec<File>, InvalidNZBError> 
 
         // There must be at least one group.
         if groups.is_empty() {
-            return Err(InvalidNZBError::new("Missing or malformed <groups>...</groups>!"));
+            return Err(InvalidNzbError::new("Missing or malformed <groups>...</groups>!"));
         }
 
         if let Some(segment_node) = node.descendants().find(|n| n.has_tag_name("segments")) {
@@ -140,7 +140,7 @@ pub(crate) fn parse_files(nzb: &Document) -> Result<Vec<File>, InvalidNZBError> 
 
         // There must be at least one segment.
         if segments.is_empty() {
-            return Err(InvalidNZBError::new("Missing or malformed <segments>...</segments>!"));
+            return Err(InvalidNzbError::new("Missing or malformed <segments>...</segments>!"));
         }
 
         files.push(File {
@@ -154,7 +154,7 @@ pub(crate) fn parse_files(nzb: &Document) -> Result<Vec<File>, InvalidNZBError> 
 
     // There must be at least one file.
     if files.is_empty() {
-        return Err(InvalidNZBError::new("Missing or malformed <file>...</file>!"));
+        return Err(InvalidNzbError::new("Missing or malformed <file>...</file>!"));
     }
 
     Ok(files)
