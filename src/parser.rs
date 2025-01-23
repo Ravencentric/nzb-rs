@@ -1,9 +1,10 @@
 use crate::{File, InvalidNzbError, Meta, Segment};
 use chrono::DateTime;
-use lazy_regex::regex;
+use lazy_regex::{regex, regex_captures_iter, regex_is_match};
 use roxmltree::Document;
 
 pub(crate) fn sanitize_xml(xml: &str) -> &str {
+    // roxmltree doesn't support XML declarations or DOCTYPEs, so we need to remove them.
     let xml_heading_re = regex!(r"^(?i)<\?xml\s+version.*\?>");
     let xml_doctype_re = regex!(r"^(?i)<!DOCTYPE.*>");
     let mut content = xml.trim();
@@ -61,7 +62,7 @@ pub(crate) fn parse_metadata(nzb: &Document) -> Meta {
                 "category" => {
                     category = category.or(meta.text().map(String::from));
                 }
-                _ => {}
+                _ => {} // Do not error on unknown meta types because the spec specifies that clients should ignore them.
             }
         }
     }
@@ -91,18 +92,32 @@ pub(crate) fn parse_files(nzb: &Document) -> Result<Vec<File>, InvalidNzbError> 
     let file_nodes = nzb.descendants().filter(|n| n.has_tag_name("file"));
 
     for node in file_nodes {
-        // These are guraranteed to exist, so we can unwrap them.
-        let poster = node.attribute("poster").unwrap().to_string();
-        let date = node.attribute("date").unwrap().parse::<i64>().unwrap();
-        let datetime = DateTime::from_timestamp(date, 0).unwrap();
-        let subject = node.attribute("subject").unwrap().to_string();
+        let poster = node
+            .attribute("poster")
+            .ok_or_else(|| InvalidNzbError::new("Missing or malformed `poster` attribute in <file>...</file>!"))?
+            .to_string();
+        let date = node
+            .attribute("date")
+            .ok_or_else(|| InvalidNzbError::new("Missing or malformed `date` attribute in <file>...</file>!"))?
+            .parse::<i64>()
+            .map_err(|_| InvalidNzbError::new("Malformed `date` attribute in <file>...</file>!"))?;
+        let datetime = DateTime::from_timestamp(date, 0)
+            .ok_or_else(|| InvalidNzbError::new("Malformed `date` attribute in <file>...</file>!"))?;
+        let subject = node
+            .attribute("subject")
+            .ok_or_else(|| InvalidNzbError::new("Missing or malformed `subject` attribute in <file>...</file>!"))?
+            .to_string();
 
         let mut groups = Vec::new();
         let mut segments = Vec::new();
 
         if let Some(groups_node) = node.descendants().find(|n| n.has_tag_name("groups")) {
             for group in groups_node.descendants().filter(|n| n.has_tag_name("group")) {
-                groups.push(group.text().unwrap().to_string());
+                let Some(group_text) = group.text() else {
+                    continue; // Skip this group if the text is missing.
+                };
+
+                groups.push(group_text.to_string());
             }
         }
 
@@ -113,25 +128,16 @@ pub(crate) fn parse_files(nzb: &Document) -> Result<Vec<File>, InvalidNzbError> 
 
         if let Some(segment_node) = node.descendants().find(|n| n.has_tag_name("segments")) {
             for segment in segment_node.descendants().filter(|n| n.has_tag_name("segment")) {
-                let size = match segment.attribute("bytes") {
-                    Some(attr) => match attr.parse::<u32>() {
-                        Ok(size) => size,
-                        Err(_) => continue, // Skip this segment if parsing fails
-                    },
-                    None => continue, // Skip this segment if the attribute is missing
+                let Some(size) = segment.attribute("bytes").and_then(|attr| attr.parse::<u32>().ok()) else {
+                    continue; // Skip this segment if the size is missing or malformed.
                 };
 
-                let number = match segment.attribute("number") {
-                    Some(attr) => match attr.parse::<u32>() {
-                        Ok(number) => number,
-                        Err(_) => continue, // Skip this segment if parsing fails
-                    },
-                    None => continue, // Skip this segment if the attribute is missing
+                let Some(number) = segment.attribute("number").and_then(|attr| attr.parse::<u32>().ok()) else {
+                    continue; // Skip this segment if the number is missing or malformed.
                 };
 
-                let message_id = match segment.text() {
-                    Some(text) => text,
-                    None => continue, // Skip this segment if the text is missing
+                let Some(message_id) = segment.text() else {
+                    continue; // Skip this segment if the message ID is missing.
                 };
 
                 segments.push(Segment::new(size, number, message_id));
@@ -171,25 +177,23 @@ pub(crate) fn sabnzbd_is_obfuscated(filestem: &str) -> bool {
     // First: the patterns that are certainly obfuscated:
 
     // ...blabla.H.264/b082fa0beaa644d3aa01045d5b8d0b36.mkv is certainly obfuscated
-    if regex!(r"^[a-f0-9]{32}$").is_match(filestem) {
+    if regex_is_match!(r"^[a-f0-9]{32}$", filestem) {
         return true;
     }
 
     // 0675e29e9abfd2.f7d069dab0b853283cc1b069a25f82.6547
-    if regex!(r"^[a-f0-9.]{40,}$").is_match(filestem) {
+    if regex_is_match!(r"^[a-f0-9.]{40,}$", filestem) {
         return true;
     }
 
     // "[BlaBla] something [More] something 5937bc5e32146e.bef89a622e4a23f07b0d3757ad5e8a.a02b264e [Brrr]"
     // So: square brackets plus 30+ hex digit
-    if regex!(r"[a-f0-9]{30}").is_match(filestem)
-        && regex!(r"\[\w+\]").find_iter(filestem).collect::<Vec<_>>().len() >= 2
-    {
+    if regex_is_match!(r"[a-f0-9]{30}", filestem) && regex_captures_iter!(r"\[\w+\]", filestem).count() >= 2 {
         return true;
     }
 
     // /some/thing/abc.xyz.a4c567edbcbf27.BLA is certainly obfuscated
-    if regex!(r"^abc\.xyz").is_match(filestem) {
+    if regex_is_match!(r"^abc\.xyz", filestem) {
         return true;
     }
 
