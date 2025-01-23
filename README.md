@@ -1,8 +1,8 @@
 nzb-rs
 ========
 
-![Tests](https://img.shields.io/github/actions/workflow/status/Ravencentric/nzb-rs/tests.yml?label=tests&link=https%3A%2F%2Fgithub.com%2FRavencentric%2Fnzb-rs%2Factions%2Fworkflows%2Ftests.yml)
-![Latest Version](https://img.shields.io/crates/v/nzb-rs?link=https%3A%2F%2Fcrates.io%2Fcrates%2Fnzb-rs)
+[![Tests](https://img.shields.io/github/actions/workflow/status/Ravencentric/nzb-rs/tests.yml?label=tests)](https://github.com/Ravencentric/nzb-rs/actions/workflows/tests.yml)
+[![Latest Version](https://img.shields.io/crates/v/nzb-rs)](https://crates.io/crates/nzb-rs)
 [![Documentation](https://docs.rs/nzb-rs/badge.svg)](https://docs.rs/nzb-rs)
 ![License](https://img.shields.io/crates/l/nzb-rs)
 
@@ -17,7 +17,7 @@ To install `nzb-rs`, add the following to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-nzb-rs = "0.1.1"
+nzb-rs = "0.3.1"
 ```
 
 Optional features:
@@ -25,6 +25,11 @@ Optional features:
 - `serde`: Enables serialization and deserialization via [serde](https://crates.io/crates/serde).
 
 ## Example
+
+The heart of this library is the [`Nzb::parse`][] method, which handles parsing NZB files into structured data.
+
+<!-- Replacement intra-doc links for GitHub and crates.io. See https://linebender.org/blog/doc-include -->
+[`Nzb::parse`]: https://docs.rs/nzb-rs/latest/nzb_rs/struct.Nzb.html#method.parse
 
 ```rust
 use nzb_rs::{InvalidNzbError, Nzb};

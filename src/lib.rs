@@ -1,57 +1,6 @@
-/*!
-nzb-rs
-========
-
-`nzb-rs` is a [spec](https://sabnzbd.org/wiki/extra/nzb-spec) compliant parser for [NZB](https://en.wikipedia.org/wiki/NZB) files.
-
-This library is a partial port of the Python [`nzb`](https://pypi.org/project/nzb/) library.
-While the parser API is similar to the original, it is not identical. Additionally, the meta editor API has not been implemented.
-
-The heart of this library is the [`NZB::parse`] method, which handles parsing NZB files into structured data.
-
-## Installation
-
-To install `nzb-rs`, add the following to your `Cargo.toml`:
-
-```toml
-[dependencies]
-nzb-rs = "0.1.1"
-```
-
-Optional features:
-
-- `serde`: Enables serialization and deserialization via [serde](https://crates.io/crates/serde).
-
-## Example
-
-```rust
-use nzb_rs::{InvalidNzbError, Nzb};
-
-fn main() -> Result<(), InvalidNzbError> {
-    let xml = r#"
-        <?xml version="1.0" encoding="UTF-8"?>
-        <!DOCTYPE nzb PUBLIC "-//newzBin//DTD NZB 1.1//EN" "http://www.newzbin.com/DTD/nzb/nzb-1.1.dtd">
-        <nzb
-            xmlns="http://www.newzbin.com/DTD/2003/nzb">
-            <file poster="John &lt;nzb@nowhere.example&gt;" date="1706440708" subject="[1/1] - &quot;Big Buck Bunny - S01E01.mkv&quot; yEnc (1/2) 1478616">
-                <groups>
-                    <group>alt.binaries.boneless</group>
-                </groups>
-                <segments>
-                    <segment bytes="739067" number="1">9cacde4c986547369becbf97003fb2c5-9483514693959@example</segment>
-                    <segment bytes="739549" number="2">70a3a038ce324e618e2751e063d6a036-7285710986748@example</segment>
-                </segments>
-            </file>
-        </nzb>
-        "#;
-    let nzb = Nzb::parse(xml)?;
-    println!("{:#?}", nzb);
-    assert_eq!(nzb.file().name(), Some("Big Buck Bunny - S01E01.mkv"));
-    Ok(())
-}
-
-```
-*/
+// Replacement intra-doc links for GitHub and crates.io. See https://linebender.org/blog/doc-include
+//! [`Nzb::parse`]: Nzb::parse
+#![doc = include_str!("../README.md")]
 
 mod parser;
 
