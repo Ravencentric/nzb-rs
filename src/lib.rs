@@ -90,7 +90,7 @@ pub struct File {
     /// The poster of the file.
     pub poster: String,
     /// The date and time when the file was posted, in UTC.
-    pub datetime: DateTime<Utc>,
+    pub posted_at: DateTime<Utc>,
     /// The subject of the file.
     pub subject: String,
     /// Groups that reference the file.
@@ -103,14 +103,14 @@ impl File {
     /// Creates a new `File` instance.
     pub fn new(
         poster: impl Into<String>,
-        datetime: impl Into<DateTime<Utc>>,
+        posted_at: impl Into<DateTime<Utc>>,
         subject: impl Into<String>,
         groups: impl IntoIterator<Item = impl Into<String>>,
         segments: impl IntoIterator<Item = Segment>,
     ) -> Self {
         Self {
             poster: poster.into(),
-            datetime: datetime.into(),
+            posted_at: posted_at.into(),
             subject: subject.into(),
             groups: groups.into_iter().map(Into::into).collect(),
             segments: segments.into_iter().collect(),

@@ -101,7 +101,7 @@ pub(crate) fn parse_files(nzb: &Document) -> Result<Vec<File>, InvalidNzbError> 
             .ok_or_else(|| InvalidNzbError::new("Missing or malformed `date` attribute in <file>...</file>!"))?
             .parse::<i64>()
             .map_err(|_| InvalidNzbError::new("Malformed `date` attribute in <file>...</file>!"))?;
-        let datetime = DateTime::from_timestamp(date, 0)
+        let posted_at = DateTime::from_timestamp(date, 0)
             .ok_or_else(|| InvalidNzbError::new("Malformed `date` attribute in <file>...</file>!"))?;
         let subject = node
             .attribute("subject")
@@ -151,7 +151,7 @@ pub(crate) fn parse_files(nzb: &Document) -> Result<Vec<File>, InvalidNzbError> 
 
         files.push(File {
             poster,
-            datetime,
+            posted_at,
             subject,
             groups,
             segments,

@@ -17,6 +17,7 @@ fn test_spec_example() {
     assert_eq!(nzb.file().name(), Some("abc-mr2a.r01"));
     assert_eq!(nzb.file().stem(), Some("abc-mr2a"));
     assert_eq!(nzb.file().extension(), Some("r01"));
+    assert_eq!(nzb.file().posted_at, DateTime::from_timestamp(1071674882, 0).unwrap());
     assert_eq!(nzb.size(), 106_895);
     assert_eq!(nzb.files[0].segments.len(), 2);
     assert_eq!(
@@ -57,6 +58,7 @@ fn test_big_buck_bunny() {
     assert_eq!(nzb.file().name(), Some("Big Buck Bunny - S01E01.mkv"));
     assert_eq!(nzb.file().stem(), Some("Big Buck Bunny - S01E01"));
     assert_eq!(nzb.file().extension(), Some("mkv"));
+    assert_eq!(nzb.file().posted_at, DateTime::from_timestamp(1706440708, 0).unwrap());
 
     assert_eq!(
         nzb.filenames(),
@@ -233,6 +235,7 @@ fn test_valid_nzb_with_one_missing_segment() {
     assert_eq!(nzb.file().name(), Some("Big Buck Bunny - S01E01.mkv"));
     assert_eq!(nzb.file().stem(), Some("Big Buck Bunny - S01E01"));
     assert_eq!(nzb.file().extension(), Some("mkv"));
+    assert_eq!(nzb.file().posted_at, DateTime::from_timestamp(1706440708, 0).unwrap());
 
     assert_eq!(
         nzb.filenames(),
