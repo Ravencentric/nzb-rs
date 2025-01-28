@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.1](https://github.com/Ravencentric/nzb-rs/compare/v0.4.0...v0.4.1) - 2025-01-28
+
+### Fixed
+
+- update version in readme
+- sort `Nzb.files`
+
+### Other
+
+- *(deps)* bump serde_json in the actions group (#11)
+- add cargo to dependabot
+
 ## [0.4.0](https://github.com/Ravencentric/nzb-rs/compare/v0.3.1...v0.4.0) - 2025-01-27
 
 ### Fixed
