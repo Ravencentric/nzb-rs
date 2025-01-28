@@ -17,7 +17,7 @@ To install `nzb-rs`, add the following to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-nzb-rs = "0.3.1"
+nzb-rs = "0.4.1"
 ```
 
 Optional features:
