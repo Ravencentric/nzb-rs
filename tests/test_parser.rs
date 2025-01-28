@@ -61,6 +61,17 @@ fn test_big_buck_bunny() {
     assert_eq!(nzb.file().posted_at, DateTime::from_timestamp(1706440708, 0).unwrap());
 
     assert_eq!(
+        nzb.files.iter().map(|f| f.subject.clone()).collect::<Vec<_>>(),
+        vec![
+            "[1/5] - \"Big Buck Bunny - S01E01.mkv\" yEnc (1/24) 16981056",
+            "[2/5] - \"Big Buck Bunny - S01E01.mkv.par2\" yEnc (1/1) 920",
+            "[3/5] - \"Big Buck Bunny - S01E01.mkv.vol00+01.par2\" yEnc (1/2) 717788",
+            "[4/5] - \"Big Buck Bunny - S01E01.mkv.vol01+02.par2\" yEnc (1/3) 1434656",
+            "[5/5] - \"Big Buck Bunny - S01E01.mkv.vol03+04.par2\" yEnc (1/5) 2869192"
+        ]
+    );
+
+    assert_eq!(
         nzb.filenames(),
         vec![
             "Big Buck Bunny - S01E01.mkv",

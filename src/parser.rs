@@ -163,6 +163,8 @@ pub(crate) fn parse_files(nzb: &Document) -> Result<Vec<File>, InvalidNzbError> 
         return Err(InvalidNzbError::new("Missing or malformed <file>...</file>!"));
     }
 
+    files.sort_by_key(|f| f.subject.clone());
+
     Ok(files)
 }
 
