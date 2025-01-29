@@ -43,7 +43,7 @@ fn test_serde_feature() {
     );
     assert_eq!(
         nzb.files[0].groups,
-        vec!["alt.binaries.newzbin".to_string(), "alt.binaries.mojo".to_string(),]
+        vec!["alt.binaries.mojo".to_string(), "alt.binaries.newzbin".to_string()]
     );
 }
 

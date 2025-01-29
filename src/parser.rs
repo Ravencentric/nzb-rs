@@ -149,6 +149,10 @@ pub(crate) fn parse_files(nzb: &Document) -> Result<Vec<File>, InvalidNzbError> 
             return Err(InvalidNzbError::new("Missing or malformed <segments>...</segments>!"));
         }
 
+        // sort for consistency
+        groups.sort();
+        segments.sort_by_key(|f| f.number);
+
         files.push(File {
             poster,
             posted_at,
