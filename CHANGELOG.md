@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.3](https://github.com/Ravencentric/nzb-rs/compare/v0.4.2...v0.4.3) - 2025-02-05
+
+### Added
+
+- add `Nzb.par2_files`, `Nzb.has_extension`, and `File.has_extension`
+
+### Fixed
+
+- update readme
+
 ## [0.4.2](https://github.com/Ravencentric/nzb-rs/compare/v0.4.1...v0.4.2) - 2025-01-29
 
 ### Fixed

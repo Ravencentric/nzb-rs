@@ -1,6 +1,6 @@
 [package]
 name = "nzb-rs"
-version = "0.4.2"
+version = "0.4.3"
 description = "A spec compliant parser for NZB files"
 authors = ["Ravencentric <me@ravencentric.cc>"]
 readme = "README.md"
