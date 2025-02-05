@@ -8,16 +8,12 @@ nzb-rs
 
 `nzb-rs` is a [spec](https://sabnzbd.org/wiki/extra/nzb-spec) compliant parser for [NZB](https://en.wikipedia.org/wiki/NZB) files.
 
-This library is a partial port of the Python [`nzb`](https://pypi.org/project/nzb/) library.  
-While the parser API is similar to the original, it is not identical. Additionally, the meta editor API has not been implemented.
-
 ## Installation
 
-To install `nzb-rs`, add the following to your `Cargo.toml`:
+`nzb-rs` is available on [crates.io](https://crates.io/crates/nzb-rs), so you can simply use [cargo](https://github.com/pypa/pip) to install it.
 
-```toml
-[dependencies]
-nzb-rs = "0.4.1"
+```console
+cargo add nzb-rs
 ```
 
 Optional features:
