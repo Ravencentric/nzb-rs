@@ -144,14 +144,24 @@ impl File {
     /// May return [`None`] if it fails to extract the stem.
     pub fn stem(&self) -> Option<&str> {
         self.name()
-            .and_then(|name| Path::new(name).file_stem().and_then(|f| f.to_str()))
+            .and_then(|name| Path::new(name).file_stem().and_then(|f| f.to_str().map(|f| f.trim())))
     }
 
     ///  Extension of the file extracted from the [`File::name`].
     /// May return [`None`] if it fails to extract the extension.
     pub fn extension(&self) -> Option<&str> {
         self.name()
-            .and_then(|name| Path::new(name).extension().and_then(|f| f.to_str()))
+            .and_then(|name| Path::new(name).extension().and_then(|f| f.to_str().map(|f| f.trim())))
+    }
+
+    /// Return [`true`] if the file has the specified extension, [`false`] otherwise.
+    ///
+    /// This method ensures consistent extension comparison
+    /// by normalizing the extension (removing any leading dot) and handling case-folding.
+    pub fn has_extension(&self, ext: impl AsRef<str>) -> bool {
+        let ext = ext.as_ref().strip_prefix(".").unwrap_or_else(|| ext.as_ref()).trim();
+        self.extension()
+            .is_some_and(|file_ext| file_ext.to_lowercase() == ext.to_lowercase())
     }
 
     /// Return [`true`] if the file is a `.par2` file, [`false`] otherwise.
@@ -273,6 +283,11 @@ impl Nzb {
             .collect()
     }
 
+    /// Vector of `.par2` files in the NZB.
+    pub fn par2_files(&self) -> Vec<&File> {
+        self.files.iter().filter(|f| f.is_par2()).collect()
+    }
+
     /// Total size of all the `.par2` files.
     pub fn par2_size(&self) -> u64 {
         self.files.iter().filter(|f| f.is_par2()).map(|file| file.size()).sum()
@@ -281,6 +296,14 @@ impl Nzb {
     /// Percentage of the size of all the `.par2` files relative to the total size.
     pub fn par2_percentage(&self) -> f64 {
         (self.par2_size() as f64 / self.size() as f64) * 100.0
+    }
+
+    /// Return [`true`] if any file in the NZB has the specified extension, [`false`] otherwise.
+    ///
+    /// This method ensures consistent extension comparison
+    /// by normalizing the extension (removing any leading dot) and handling case-folding.
+    pub fn has_extension(&self, ext: impl AsRef<str>) -> bool {
+        self.files.iter().any(|f| f.has_extension(ext.as_ref()))
     }
 
     /// Return [`true`] if there's at least one `.par2` file in the NZB, [`false`] otherwise.
