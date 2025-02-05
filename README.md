@@ -10,7 +10,7 @@ nzb-rs
 
 ## Installation
 
-`nzb-rs` is available on [crates.io](https://crates.io/crates/nzb-rs), so you can simply use [cargo](https://github.com/pypa/pip) to install it.
+`nzb-rs` is available on [crates.io](https://crates.io/crates/nzb-rs), so you can simply use [cargo](https://github.com/rust-lang/cargo) to install it.
 
 ```console
 cargo add nzb-rs
