@@ -1,12 +1,25 @@
-mod common;
-
 use chrono::DateTime;
-use common::get_nzb;
-use nzb_rs::{File, Segment};
+use nzb_rs::{File, Nzb, Segment};
+use rstest::rstest;
+use std::file;
+use std::path::{Path, PathBuf};
 
-#[test]
-fn test_spec_example() {
-    let nzb = get_nzb("spec_example.nzb");
+fn get_file(name: &str) -> PathBuf {
+    Path::new(file!())
+        .parent()
+        .unwrap()
+        .canonicalize()
+        .unwrap()
+        .join("nzbs")
+        .join(name)
+        .to_path_buf()
+}
+
+#[rstest]
+#[case::spec_example_nzb(get_file("spec_example.nzb"))]
+#[case::spec_example_nzb_gz(get_file("spec_example.nzb.gz"))]
+fn test_spec_example(#[case] nzb_file: PathBuf) {
+    let nzb = Nzb::parse_file(nzb_file).unwrap();
     assert_eq!(nzb.meta.title, Some("Your File!".to_string()));
     assert_eq!(nzb.meta.passwords, vec!["secret"]);
     assert_eq!(nzb.meta.tags, vec!["HD"]);
@@ -47,10 +60,11 @@ fn test_spec_example() {
     );
 }
 
-#[test]
-fn test_big_buck_bunny() {
-    let nzb = get_nzb("big_buck_bunny.nzb");
-
+#[rstest]
+#[case::big_buck_bunny_nzb(get_file("big_buck_bunny.nzb"))]
+#[case::big_buck_bunny_nzb_gz(get_file("big_buck_bunny.nzb.gz"))]
+fn test_big_buck_bunny(#[case] nzb_file: PathBuf) {
+    let nzb = Nzb::parse_file(nzb_file).unwrap();
     assert_eq!(nzb.meta.title, None);
     assert!(nzb.meta.passwords.is_empty());
     assert!(nzb.meta.tags.is_empty());
@@ -93,17 +107,6 @@ fn test_big_buck_bunny() {
             "Big Buck Bunny - S01E01.mkv.vol03+04.par2"
         ]
     );
-    // assert_eq!(
-    //     nzb.filestems(),
-    //     vec![
-    //         "Big Buck Bunny - S01E01",
-    //         "Big Buck Bunny - S01E01.mkv",
-    //         "Big Buck Bunny - S01E01.mkv.vol00+01",
-    //         "Big Buck Bunny - S01E01.mkv.vol01+02",
-    //         "Big Buck Bunny - S01E01.mkv.vol03+04"
-    //     ]
-    // );
-    // assert_eq!(nzb.extensions(), vec!["mkv", "par2"]);
     assert_eq!(nzb.posters(), vec!["John <nzb@nowhere.example>"]);
     assert_eq!(nzb.groups(), vec!["alt.binaries.boneless"]);
     assert_eq!(nzb.par2_size(), 5_183_128);
@@ -243,7 +246,8 @@ fn test_big_buck_bunny() {
 
 #[test]
 fn test_valid_nzb_with_one_missing_segment() {
-    let nzb = get_nzb("valid_nzb_with_one_missing_segment.nzb");
+    let file = get_file("valid_nzb_with_one_missing_segment.nzb");
+    let nzb = Nzb::parse_file(file).unwrap();
 
     assert_eq!(nzb.meta.title, None);
     assert!(nzb.meta.passwords.is_empty());
@@ -276,17 +280,6 @@ fn test_valid_nzb_with_one_missing_segment() {
             "Big Buck Bunny - S01E01.mkv.vol03+04.par2"
         ]
     );
-    // assert_eq!(
-    //     nzb.filestems(),
-    //     vec![
-    //         "Big Buck Bunny - S01E01",
-    //         "Big Buck Bunny - S01E01.mkv",
-    //         "Big Buck Bunny - S01E01.mkv.vol00+01",
-    //         "Big Buck Bunny - S01E01.mkv.vol01+02",
-    //         "Big Buck Bunny - S01E01.mkv.vol03+04"
-    //     ]
-    // );
-    // assert_eq!(nzb.extensions(), vec!["mkv", "par2"]);
     assert_eq!(nzb.posters(), vec!["John <nzb@nowhere.example>"]);
     assert_eq!(nzb.groups(), vec!["alt.binaries.boneless"]);
     assert_eq!(nzb.par2_size(), 5_183_128);
@@ -422,7 +415,8 @@ fn test_valid_nzb_with_one_missing_segment() {
 
 #[test]
 fn test_bad_subject() {
-    let nzb = get_nzb("bad_subject.nzb");
+    let file = get_file("bad_subject.nzb");
+    let nzb = Nzb::parse_file(file).unwrap();
 
     assert_eq!(nzb.file().name(), None);
     assert_eq!(nzb.file().stem(), None);
@@ -436,7 +430,8 @@ fn test_bad_subject() {
 
 #[test]
 fn test_non_standard_meta() {
-    let nzb = get_nzb("non_standard_meta.nzb");
+    let file = get_file("non_standard_meta.nzb");
+    let nzb = Nzb::parse_file(file).unwrap();
 
     assert_eq!(nzb.meta.title, None);
     assert_eq!(nzb.meta.category, None);
@@ -446,7 +441,8 @@ fn test_non_standard_meta() {
 
 #[test]
 fn test_no_meta() {
-    let nzb = get_nzb("no_meta.nzb");
+    let file = get_file("no_meta.nzb");
+    let nzb = Nzb::parse_file(file).unwrap();
 
     assert_eq!(nzb.meta.title, None);
     assert_eq!(nzb.meta.category, None);
@@ -456,7 +452,8 @@ fn test_no_meta() {
 
 #[test]
 fn test_single_meta() {
-    let nzb = get_nzb("single_meta.nzb");
+    let file = get_file("single_meta.nzb");
+    let nzb = Nzb::parse_file(file).unwrap();
 
     assert_eq!(nzb.meta.title, Some("title".to_string()));
     assert_eq!(nzb.meta.category, None);
@@ -466,7 +463,8 @@ fn test_single_meta() {
 
 #[test]
 fn test_nzb_with_no_head() {
-    let nzb = get_nzb("nzb_with_no_head.nzb");
+    let file = get_file("nzb_with_no_head.nzb");
+    let nzb = Nzb::parse_file(file).unwrap();
 
     assert_eq!(nzb.meta.title, None);
     assert_eq!(nzb.meta.category, None);
@@ -476,7 +474,8 @@ fn test_nzb_with_no_head() {
 
 #[test]
 fn test_one_rar_file() {
-    let nzb = get_nzb("one_rar_file.nzb");
+    let file = get_file("one_rar_file.nzb");
+    let nzb = Nzb::parse_file(file).unwrap();
 
     assert!(nzb.has_rar());
     assert!(!nzb.is_rar());
@@ -485,7 +484,8 @@ fn test_one_rar_file() {
 
 #[test]
 fn test_multi_rar() {
-    let nzb = get_nzb("multi_rar.nzb");
+    let file = get_file("multi_rar.nzb");
+    let nzb = Nzb::parse_file(file).unwrap();
 
     assert!(nzb.has_rar());
     assert!(nzb.is_rar());

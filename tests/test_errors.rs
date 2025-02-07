@@ -1,7 +1,16 @@
-mod common;
-
-use common::get_nzb_string;
 use nzb_rs::{InvalidNzbError, Nzb};
+use std::path::{Path, PathBuf};
+
+fn get_file(name: &str) -> PathBuf {
+    Path::new(file!())
+        .parent()
+        .unwrap()
+        .canonicalize()
+        .unwrap()
+        .join("nzbs")
+        .join(name)
+        .to_path_buf()
+}
 
 #[test]
 fn test_invalid_xml() {
@@ -55,8 +64,8 @@ fn test_valid_xml_but_invalid_nzb() {
 
 #[test]
 fn test_malformed_files() {
-    let file = get_nzb_string("malformed_files.nzb");
-    let nzb = Nzb::parse(file);
+    let file = get_file("malformed_files.nzb");
+    let nzb = Nzb::parse_file(file);
     assert!(nzb.is_err());
     assert_eq!(
         nzb.unwrap_err(),
@@ -66,8 +75,8 @@ fn test_malformed_files() {
 
 #[test]
 fn test_malformed_files2() {
-    let file = get_nzb_string("malformed_files2.nzb");
-    let nzb = Nzb::parse(file);
+    let file = get_file("malformed_files2.nzb");
+    let nzb = Nzb::parse_file(file);
     assert!(nzb.is_err());
     assert_eq!(
         nzb.unwrap_err(),
@@ -77,8 +86,8 @@ fn test_malformed_files2() {
 
 #[test]
 fn test_malformed_groups() {
-    let file = get_nzb_string("malformed_groups.nzb");
-    let nzb = Nzb::parse(file);
+    let file = get_file("malformed_groups.nzb");
+    let nzb = Nzb::parse_file(file);
     assert!(nzb.is_err());
     assert_eq!(
         nzb.unwrap_err(),
@@ -88,11 +97,23 @@ fn test_malformed_groups() {
 
 #[test]
 fn test_malformed_segments() {
-    let file = get_nzb_string("malformed_segments.nzb");
-    let nzb = Nzb::parse(file);
+    let file = get_file("malformed_segments.nzb");
+    let nzb = Nzb::parse_file(file);
     assert!(nzb.is_err());
     assert_eq!(
         nzb.unwrap_err(),
         InvalidNzbError::new("Missing or malformed <segments>...</segments>!")
+    );
+}
+
+
+#[test]
+fn test_bad_gzip_file() {
+    let file = get_file("invalid_gzipped_nzb.nzb.gz");
+    let nzb = Nzb::parse_file(file);
+    assert!(nzb.is_err());
+    assert_eq!(
+        nzb.unwrap_err(),
+        InvalidNzbError::new("invalid gzip header")
     );
 }

@@ -1,15 +1,26 @@
 #![cfg(feature = "serde")]
-
-mod common;
-
 use chrono::DateTime;
-use common::get_nzb;
-use nzb_rs::{File, Segment};
+use nzb_rs::{File, Nzb, Segment};
+use rstest::rstest;
 use serde_json;
+use std::path::{Path, PathBuf};
 
-#[test]
-fn test_serde_feature() {
-    let original = get_nzb("spec_example.nzb");
+fn get_file(name: &str) -> PathBuf {
+    Path::new(file!())
+        .parent()
+        .unwrap()
+        .canonicalize()
+        .unwrap()
+        .join("nzbs")
+        .join(name)
+        .to_path_buf()
+}
+
+#[rstest]
+#[case::spec_example_nzb(get_file("spec_example.nzb"))]
+#[case::spec_example_nzb_gz(get_file("spec_example.nzb.gz"))]
+fn test_serde_feature(#[case] nzb_file: PathBuf) {
+    let original = Nzb::parse_file(nzb_file).unwrap();
     let serialized = serde_json::to_string(&original).unwrap();
     let nzb = serde_json::from_str(&serialized).unwrap();
     assert_eq!(original, nzb);
@@ -47,9 +58,11 @@ fn test_serde_feature() {
     );
 }
 
-#[test]
-fn test_valid_nzb_with_one_missing_segment() {
-    let original = get_nzb("valid_nzb_with_one_missing_segment.nzb");
+#[rstest]
+#[case::valid_nzb_with_one_missing_segment_nzb(get_file("valid_nzb_with_one_missing_segment.nzb"))]
+#[case::valid_nzb_with_one_missing_segment_nzb_gz(get_file("valid_nzb_with_one_missing_segment.nzb.gz"))]
+fn test_valid_nzb_with_one_missing_segment(#[case] nzb_file: PathBuf) {
+    let original = Nzb::parse_file(nzb_file).unwrap();
     let serialized = serde_json::to_string(&original).unwrap();
     let nzb = serde_json::from_str(&serialized).unwrap();
     assert_eq!(original, nzb);

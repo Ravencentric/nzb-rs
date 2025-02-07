@@ -9,12 +9,16 @@ use chrono::{DateTime, Utc};
 use itertools::Itertools;
 use lazy_regex::regex;
 use roxmltree::Document;
+use std::fs;
+use std::io::Read;
 use std::path::Path;
 use std::str::FromStr;
 use thiserror::Error;
 
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
+
+use flate2::read::GzDecoder;
 
 /// An error type representing an invalid NZB.
 #[derive(Error, Clone, Debug, Default, PartialEq, Eq, PartialOrd, Ord, Hash)]
@@ -29,6 +33,14 @@ impl InvalidNzbError {
     pub fn new(message: impl Into<String>) -> Self {
         Self {
             message: message.into(),
+        }
+    }
+}
+
+impl From<std::io::Error> for InvalidNzbError {
+    fn from(value: std::io::Error) -> Self {
+        Self {
+            message: value.to_string(),
         }
     }
 }
@@ -246,8 +258,49 @@ impl Nzb {
     ///     Ok(())
     /// }
     /// ```
-    pub fn parse(xml: impl AsRef<str>) -> Result<Self, InvalidNzbError> {
-        Self::from_str(xml.as_ref())
+    pub fn parse(nzb: impl AsRef<str>) -> Result<Self, InvalidNzbError> {
+        nzb.as_ref().parse()
+    }
+
+    /// Parse a file into an [`Nzb`] instance.
+    /// Handles both regular and gzipped NZB files.
+    ///
+    /// # Errors
+    ///
+    /// This function returns an [`InvalidNzbError`] in the following cases:
+    /// - If the file cannot be read.
+    /// - If the contents of the file are malformed and cannot be parsed.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// use nzb_rs::{InvalidNzbError, Nzb};
+    ///
+    /// fn main() -> Result<(), InvalidNzbError> {
+    ///     let nzb = Nzb::parse_file("tests/nzbs/big_buck_bunny.nzb")?;
+    ///     println!("{:#?}", nzb);
+    ///     assert_eq!(nzb.file().name(), Some("Big Buck Bunny - S01E01.mkv"));
+    ///     Ok(())
+    /// }
+    /// ```
+    pub fn parse_file(nzb: impl AsRef<Path>) -> Result<Self, InvalidNzbError> {
+        let file = nzb.as_ref().canonicalize()?;
+
+        let content = if file
+            .extension()
+            .and_then(|f| f.to_str())
+            .is_some_and(|f| f.trim().eq_ignore_ascii_case("gz"))
+        {
+            let gzipped = fs::read(file)?;
+            let mut decoder = GzDecoder::new(&gzipped[..]);
+            let mut content = String::new();
+            decoder.read_to_string(&mut content)?;
+            content
+        } else {
+            fs::read_to_string(file)?
+        };
+
+        Self::parse(content)
     }
 
     /// The main content file (episode, movie, etc) in the NZB.

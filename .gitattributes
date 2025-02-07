@@ -1,1 +1,2 @@
-*.nzb linguist-language=XML
+*.nzb linguist-language=xml
+*.gz binary
