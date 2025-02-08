@@ -11,6 +11,7 @@
     </head>
     <file poster="Joe Bloggs &lt;bloggs@nowhere.example&gt;" date="1071674882" subject="Here's your file!  abc-mr2a.r01 (1/2)">
         <groups>
+            <group></group>
         </groups>
         <segments>
             <segment bytes="102394" number="1">123456789abcdef@news.newzbin.com</segment>

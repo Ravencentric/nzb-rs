@@ -99,6 +99,16 @@ fn test_big_buck_bunny(#[case] nzb_file: PathBuf) {
     );
 
     assert_eq!(
+        nzb.par2_files().iter().map(|f| f.subject.clone()).collect::<Vec<_>>(),
+        vec![
+            "[2/5] - \"Big Buck Bunny - S01E01.mkv.par2\" yEnc (1/1) 920",
+            "[3/5] - \"Big Buck Bunny - S01E01.mkv.vol00+01.par2\" yEnc (1/2) 717788",
+            "[4/5] - \"Big Buck Bunny - S01E01.mkv.vol01+02.par2\" yEnc (1/3) 1434656",
+            "[5/5] - \"Big Buck Bunny - S01E01.mkv.vol03+04.par2\" yEnc (1/5) 2869192"
+        ]
+    );
+
+    assert_eq!(
         nzb.filenames(),
         vec![
             "Big Buck Bunny - S01E01.mkv",
@@ -245,10 +255,11 @@ fn test_big_buck_bunny(#[case] nzb_file: PathBuf) {
     )
 }
 
-#[test]
-fn test_valid_nzb_with_one_missing_segment() {
-    let file = get_file("valid_nzb_with_one_missing_segment.nzb");
-    let nzb = Nzb::parse_file(file).unwrap();
+#[rstest]
+#[case::valid_nzb_with_bad_segments(get_file("valid_nzb_with_bad_segments.nzb"))]
+#[case::valid_nzb_with_bad_segments_gz(get_file("valid_nzb_with_bad_segments.nzb.gz"))]
+fn test_valid_nzb_with_bad_segments(#[case] nzb_file: PathBuf) {
+    let nzb = Nzb::parse_file(nzb_file).unwrap();
 
     assert_eq!(nzb.meta.title, None);
     assert!(nzb.meta.passwords.is_empty());
@@ -259,7 +270,7 @@ fn test_valid_nzb_with_one_missing_segment() {
     assert!(!nzb.is_rar());
     assert!(!nzb.is_obfuscated());
     assert!(nzb.has_par2());
-    assert_eq!(nzb.size(), 21_965_221);
+    assert_eq!(nzb.size(), 20485917);
     assert_eq!(nzb.file().name(), Some("Big Buck Bunny - S01E01.mkv"));
     assert_eq!(nzb.file().stem(), Some("Big Buck Bunny - S01E01"));
     assert_eq!(nzb.file().extension(), Some("mkv"));
@@ -270,6 +281,16 @@ fn test_valid_nzb_with_one_missing_segment() {
     assert!(nzb.has_extension(".MKv"));
     assert!(!nzb.has_extension("..MKv"));
     assert_eq!(nzb.file().posted_at, DateTime::from_timestamp(1706440708, 0).unwrap());
+
+    assert_eq!(
+        nzb.par2_files().iter().map(|f| f.subject.clone()).collect::<Vec<_>>(),
+        vec![
+            "[2/5] - \"Big Buck Bunny - S01E01.mkv.par2\" yEnc (1/1) 920",
+            "[3/5] - \"Big Buck Bunny - S01E01.mkv.vol00+01.par2\" yEnc (1/2) 717788",
+            "[4/5] - \"Big Buck Bunny - S01E01.mkv.vol01+02.par2\" yEnc (1/3) 1434656",
+            "[5/5] - \"Big Buck Bunny - S01E01.mkv.vol03+04.par2\" yEnc (1/5) 2869192"
+        ]
+    );
 
     assert_eq!(
         nzb.filenames(),
@@ -284,7 +305,7 @@ fn test_valid_nzb_with_one_missing_segment() {
     assert_eq!(nzb.posters(), vec!["John <nzb@nowhere.example>"]);
     assert_eq!(nzb.groups(), vec!["alt.binaries.boneless"]);
     assert_eq!(nzb.par2_size(), 5_183_128);
-    assert_eq!(nzb.par2_percentage().floor(), 23.0);
+    assert_eq!(nzb.par2_percentage().floor(), 25.0);
     assert_eq!(
         nzb.file(),
         &File::new(
@@ -343,17 +364,7 @@ fn test_valid_nzb_with_one_missing_segment() {
                     10u32,
                     "79a027e3bfde458ea2bd0db1632fc84e-7270120407913@example"
                 ),
-                Segment::new(
-                    739657u32,
-                    11u32,
-                    "fb2bd74e1257487a9240ef0cf81765cc-7147741101314@example"
-                ),
-                Segment::new(
-                    739647u32,
-                    12u32,
-                    "d39ca8be78c34e3fa6f3211f1b397b3a-4725950858191@example"
-                ),
-                // 13th Segment is missing here
+                // 11-13 segments are missing here
                 Segment::new(
                     739721u32,
                     14u32,

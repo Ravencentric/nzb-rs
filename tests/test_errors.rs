@@ -150,3 +150,110 @@ fn test_bad_gzip_file() {
         _ => panic!(),
     }
 }
+
+
+#[test]
+fn test_non_existent_file() {
+    let nzb = Nzb::parse_file("i dont exist");
+    assert!(nzb.is_err());
+
+    let error = nzb.unwrap_err();
+
+    match error {
+        ParseNzbFileError::Io { source, file } => {
+            assert_eq!(source.to_string(), "The system cannot find the file specified. (os error 2)".to_string());
+            assert_eq!(file, Path::new("i dont exist"));
+        }
+        _ => panic!(),
+    }
+}
+
+#[test]
+fn test_file_with_missing_poster() {
+    let no_poster = r#"
+    <?xml version="1.0" encoding="iso-8859-1" ?>
+    <!DOCTYPE nzb PUBLIC "-//newzBin//DTD NZB 1.1//EN" "http://www.newzbin.com/DTD/nzb/nzb-1.1.dtd">
+    <nzb xmlns="http://www.newzbin.com/DTD/2003/nzb">
+        <head>
+            <meta type="title">Your File!</meta>
+            <meta type="password">secret</meta>
+            <meta type="tag">HD</meta>
+            <meta type="category">TV</meta>
+        </head>
+        <file date="1071674882" subject="Here's your file!  abc-mr2a.r01 (1/2)">
+            <groups>
+                <group>alt.binaries.newzbin</group>
+                <group>alt.binaries.mojo</group>
+            </groups>
+            <segments>
+                <segment bytes="102394" number="1">123456789abcdef@news.newzbin.com</segment>
+                <segment bytes="4501" number="2">987654321fedbca@news.newzbin.com</segment>
+            </segments>
+        </file>
+    </nzb>
+    "#.trim();
+
+    let nzb = Nzb::parse(no_poster);
+    assert!(nzb.is_err_and(|e| e == ParseNzbError::FileAttribute { attribute: "poster".to_string() }))
+
+}
+
+#[test]
+fn test_file_with_bad_date() {
+    let no_poster = r#"
+    <?xml version="1.0" encoding="iso-8859-1" ?>
+    <!DOCTYPE nzb PUBLIC "-//newzBin//DTD NZB 1.1//EN" "http://www.newzbin.com/DTD/nzb/nzb-1.1.dtd">
+    <nzb xmlns="http://www.newzbin.com/DTD/2003/nzb">
+        <head>
+            <meta type="title">Your File!</meta>
+            <meta type="password">secret</meta>
+            <meta type="tag">HD</meta>
+            <meta type="category">TV</meta>
+        </head>
+        <file poster="Joe Bloggs &lt;bloggs@nowhere.example&gt;" date="blah" subject="Here's your file!  abc-mr2a.r01 (1/2)">
+            <groups>
+                <group>alt.binaries.newzbin</group>
+                <group>alt.binaries.mojo</group>
+            </groups>
+            <segments>
+                <segment bytes="102394" number="1">123456789abcdef@news.newzbin.com</segment>
+                <segment bytes="4501" number="2">987654321fedbca@news.newzbin.com</segment>
+            </segments>
+        </file>
+    </nzb>
+    "#.trim();
+
+    let nzb = Nzb::parse(no_poster);
+    assert!(nzb.is_err_and(|e| e == ParseNzbError::FileAttribute { attribute: "date".to_string() }))
+
+}
+
+#[test]
+fn test_file_with_missing_subject() {
+    let no_poster = r#"
+    <?xml version="1.0" encoding="iso-8859-1" ?>
+    <!DOCTYPE nzb PUBLIC "-//newzBin//DTD NZB 1.1//EN" "http://www.newzbin.com/DTD/nzb/nzb-1.1.dtd">
+    <nzb xmlns="http://www.newzbin.com/DTD/2003/nzb">
+        <head>
+            <meta type="title">Your File!</meta>
+            <meta type="password">secret</meta>
+            <meta type="tag">HD</meta>
+            <meta type="category">TV</meta>
+        </head>
+        <file poster="Joe Bloggs &lt;bloggs@nowhere.example&gt;" date="1071674882">
+            <groups>
+                <group>alt.binaries.newzbin</group>
+                <group>alt.binaries.mojo</group>
+            </groups>
+            <segments>
+                <segment bytes="102394" number="1">123456789abcdef@news.newzbin.com</segment>
+                <segment bytes="4501" number="2">987654321fedbca@news.newzbin.com</segment>
+            </segments>
+        </file>
+    </nzb>
+    "#.trim();
+
+    let nzb = Nzb::parse(no_poster);
+    assert!(nzb.is_err_and(|e| e == ParseNzbError::FileAttribute { attribute: "subject".to_string() }))
+
+}
