@@ -1,4 +1,5 @@
-use nzb_rs::{InvalidNzbError, Nzb};
+use nzb_rs::{Nzb, ParseNzbError, ParseNzbFileError};
+use pretty_assertions::assert_eq;
 use std::path::{Path, PathBuf};
 
 fn get_file(name: &str) -> PathBuf {
@@ -38,6 +39,12 @@ fn test_invalid_xml() {
 
     let nzb = Nzb::parse(invalid_xml);
     assert!(nzb.is_err());
+    assert_eq!(
+        nzb.unwrap_err(),
+        ParseNzbError::XmlSyntax {
+            message: "the root node was opened but never closed".to_string()
+        }
+    )
 }
 
 #[test]
@@ -60,6 +67,7 @@ fn test_valid_xml_but_invalid_nzb() {
 
     let nzb = Nzb::parse(valid_xml_but_invalid_nzb);
     assert!(nzb.is_err());
+    assert_eq!(nzb.unwrap_err(), ParseNzbError::SegmentsElement)
 }
 
 #[test]
@@ -67,10 +75,15 @@ fn test_malformed_files() {
     let file = get_file("malformed_files.nzb");
     let nzb = Nzb::parse_file(file);
     assert!(nzb.is_err());
-    assert_eq!(
-        nzb.unwrap_err(),
-        InvalidNzbError::new("Missing or malformed <file>...</file>!")
-    );
+
+    let error = nzb.unwrap_err();
+
+    match error {
+        ParseNzbFileError::Parse { source } => {
+            assert_eq!(source, ParseNzbError::FileElement)
+        }
+        _ => panic!(),
+    }
 }
 
 #[test]
@@ -78,10 +91,15 @@ fn test_malformed_files2() {
     let file = get_file("malformed_files2.nzb");
     let nzb = Nzb::parse_file(file);
     assert!(nzb.is_err());
-    assert_eq!(
-        nzb.unwrap_err(),
-        InvalidNzbError::new("Missing or malformed <groups>...</groups>!")
-    );
+
+    let error = nzb.unwrap_err();
+
+    match error {
+        ParseNzbFileError::Parse { source } => {
+            assert_eq!(source, ParseNzbError::GroupsElement)
+        }
+        _ => panic!(),
+    }
 }
 
 #[test]
@@ -89,10 +107,15 @@ fn test_malformed_groups() {
     let file = get_file("malformed_groups.nzb");
     let nzb = Nzb::parse_file(file);
     assert!(nzb.is_err());
-    assert_eq!(
-        nzb.unwrap_err(),
-        InvalidNzbError::new("Missing or malformed <groups>...</groups>!")
-    );
+
+    let error = nzb.unwrap_err();
+
+    match error {
+        ParseNzbFileError::Parse { source } => {
+            assert_eq!(source, ParseNzbError::GroupsElement)
+        }
+        _ => panic!(),
+    }
 }
 
 #[test]
@@ -100,20 +123,30 @@ fn test_malformed_segments() {
     let file = get_file("malformed_segments.nzb");
     let nzb = Nzb::parse_file(file);
     assert!(nzb.is_err());
-    assert_eq!(
-        nzb.unwrap_err(),
-        InvalidNzbError::new("Missing or malformed <segments>...</segments>!")
-    );
-}
 
+    let error = nzb.unwrap_err();
+
+    match error {
+        ParseNzbFileError::Parse { source } => {
+            assert_eq!(source, ParseNzbError::SegmentsElement)
+        }
+        _ => panic!(),
+    }
+}
 
 #[test]
 fn test_bad_gzip_file() {
     let file = get_file("invalid_gzipped_nzb.nzb.gz");
     let nzb = Nzb::parse_file(file);
     assert!(nzb.is_err());
-    assert_eq!(
-        nzb.unwrap_err(),
-        InvalidNzbError::new("invalid gzip header")
-    );
+
+    let error = nzb.unwrap_err();
+
+    match error {
+        ParseNzbFileError::Gzip { source, file } => {
+            assert_eq!(source.to_string(), "invalid gzip header".to_string());
+            assert_eq!(file, get_file("invalid_gzipped_nzb.nzb.gz"));
+        }
+        _ => panic!(),
+    }
 }

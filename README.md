@@ -28,9 +28,9 @@ The heart of this library is the [`Nzb::parse`][] method, which handles parsing 
 [`Nzb::parse`]: https://docs.rs/nzb-rs/latest/nzb_rs/struct.Nzb.html#method.parse
 
 ```rust
-use nzb_rs::{InvalidNzbError, Nzb};
+use nzb_rs::{Nzb, ParseNzbError};
 
-fn main() -> Result<(), InvalidNzbError> {
+fn main() -> Result<(), ParseNzbError> {
     let xml = r#"
         <?xml version="1.0" encoding="UTF-8"?>
         <!DOCTYPE nzb PUBLIC "-//newzBin//DTD NZB 1.1//EN" "http://www.newzbin.com/DTD/nzb/nzb-1.1.dtd">

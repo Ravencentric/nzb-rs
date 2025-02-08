@@ -1,6 +1,7 @@
 #![cfg(feature = "serde")]
 use chrono::DateTime;
 use nzb_rs::{File, Nzb, Segment};
+use pretty_assertions::assert_eq;
 use rstest::rstest;
 use serde_json;
 use std::path::{Path, PathBuf};

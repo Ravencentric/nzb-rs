@@ -1,5 +1,6 @@
 use chrono::DateTime;
 use nzb_rs::{File, Nzb, Segment};
+use pretty_assertions::assert_eq;
 use rstest::rstest;
 use std::file;
 use std::path::{Path, PathBuf};

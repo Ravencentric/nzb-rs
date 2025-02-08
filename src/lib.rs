@@ -2,10 +2,13 @@
 //! [`Nzb::parse`]: Nzb::parse
 #![doc = include_str!("../README.md")]
 
+mod errors;
 mod parser;
 
+pub use crate::errors::{ParseNzbError, ParseNzbFileError};
 use crate::parser::{parse_files, parse_metadata, sabnzbd_is_obfuscated, sanitize_xml};
 use chrono::{DateTime, Utc};
+use flate2::read::GzDecoder;
 use itertools::Itertools;
 use lazy_regex::regex;
 use roxmltree::Document;
@@ -13,37 +16,9 @@ use std::fs;
 use std::io::Read;
 use std::path::Path;
 use std::str::FromStr;
-use thiserror::Error;
 
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
-
-use flate2::read::GzDecoder;
-
-/// An error type representing an invalid NZB.
-#[derive(Error, Clone, Debug, Default, PartialEq, Eq, PartialOrd, Ord, Hash)]
-#[error("{message}")]
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-pub struct InvalidNzbError {
-    /// Error message describing why the NZB is invalid.
-    pub message: String,
-}
-impl InvalidNzbError {
-    /// Creates a new `InvalidNzbError` with the given error message.
-    pub fn new(message: impl Into<String>) -> Self {
-        Self {
-            message: message.into(),
-        }
-    }
-}
-
-impl From<std::io::Error> for InvalidNzbError {
-    fn from(value: std::io::Error) -> Self {
-        Self {
-            message: value.to_string(),
-        }
-    }
-}
 
 /// Represents optional creator-definable metadata in an NZB.
 #[derive(Clone, Debug, Default, PartialEq, Eq, PartialOrd, Ord, Hash)]
@@ -210,13 +185,13 @@ pub struct Nzb {
 }
 
 impl FromStr for Nzb {
-    type Err = InvalidNzbError;
+    type Err = ParseNzbError;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         let xml = sanitize_xml(s);
-        let nzb = Document::parse(xml).map_err(|e| InvalidNzbError::new(e.to_string()))?;
+        let nzb = Document::parse(xml)?;
         let meta = parse_metadata(&nzb);
-        let files = parse_files(&nzb).map_err(|e| InvalidNzbError::new(e.to_string()))?;
+        let files = parse_files(&nzb)?;
         Ok(Self { meta, files })
     }
 }
@@ -226,16 +201,16 @@ impl Nzb {
     ///
     /// # Errors
     ///
-    /// This function returns an [`InvalidNzbError`] in the following cases:
+    /// This function returns an [`ParseNzbError`] in the following cases:
     /// - If the XML is malformed and cannot be parsed.
     /// - If the NZB structure is invalid or missing required components.
     ///
     /// # Example
     ///
     /// ```rust
-    /// use nzb_rs::{InvalidNzbError, Nzb};
+    /// use nzb_rs::{ParseNzbError, Nzb};
     ///
-    /// fn main() -> Result<(), InvalidNzbError> {
+    /// fn main() -> Result<(), ParseNzbError> {
     ///     let xml = r#"
     ///         <?xml version="1.0" encoding="UTF-8"?>
     ///         <!DOCTYPE nzb PUBLIC "-//newzBin//DTD NZB 1.1//EN" "http://www.newzbin.com/DTD/nzb/nzb-1.1.dtd">
@@ -258,7 +233,7 @@ impl Nzb {
     ///     Ok(())
     /// }
     /// ```
-    pub fn parse(nzb: impl AsRef<str>) -> Result<Self, InvalidNzbError> {
+    pub fn parse(nzb: impl AsRef<str>) -> Result<Self, ParseNzbError> {
         nzb.as_ref().parse()
     }
 
@@ -267,40 +242,45 @@ impl Nzb {
     ///
     /// # Errors
     ///
-    /// This function returns an [`InvalidNzbError`] in the following cases:
+    /// This function returns an [`ParseNzbFileError`] in the following cases:
     /// - If the file cannot be read.
     /// - If the contents of the file are malformed and cannot be parsed.
     ///
     /// # Example
     ///
     /// ```rust
-    /// use nzb_rs::{InvalidNzbError, Nzb};
+    /// use nzb_rs::{ParseNzbFileError, Nzb};
     ///
-    /// fn main() -> Result<(), InvalidNzbError> {
+    /// fn main() -> Result<(), ParseNzbFileError> {
     ///     let nzb = Nzb::parse_file("tests/nzbs/big_buck_bunny.nzb")?;
     ///     println!("{:#?}", nzb);
     ///     assert_eq!(nzb.file().name(), Some("Big Buck Bunny - S01E01.mkv"));
     ///     Ok(())
     /// }
     /// ```
-    pub fn parse_file(nzb: impl AsRef<Path>) -> Result<Self, InvalidNzbError> {
-        let file = nzb.as_ref().canonicalize()?;
+    pub fn parse_file(nzb: impl AsRef<Path>) -> Result<Self, ParseNzbFileError> {
+        let file = nzb
+            .as_ref()
+            .canonicalize()
+            .map_err(|source| ParseNzbFileError::from_io_err(source, nzb.as_ref()))?;
 
         let content = if file
             .extension()
             .and_then(|f| f.to_str())
             .is_some_and(|f| f.trim().eq_ignore_ascii_case("gz"))
         {
-            let gzipped = fs::read(file)?;
+            let gzipped = fs::read(file).map_err(|source| ParseNzbFileError::from_gzip_err(source, nzb.as_ref()))?;
             let mut decoder = GzDecoder::new(&gzipped[..]);
             let mut content = String::new();
-            decoder.read_to_string(&mut content)?;
+            decoder
+                .read_to_string(&mut content)
+                .map_err(|source| ParseNzbFileError::from_gzip_err(source, nzb.as_ref()))?;
             content
         } else {
-            fs::read_to_string(file)?
+            fs::read_to_string(file).map_err(|source| ParseNzbFileError::from_gzip_err(source, nzb.as_ref()))?
         };
 
-        Self::parse(content)
+        Ok(Self::parse(content)?)
     }
 
     /// The main content file (episode, movie, etc) in the NZB.
