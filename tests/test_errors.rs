@@ -1,7 +1,7 @@
 use nzb_rs::{Nzb, ParseNzbError, ParseNzbFileError};
 use pretty_assertions::assert_eq;
-use std::path::{Path, PathBuf};
 use std::io;
+use std::path::{Path, PathBuf};
 
 fn get_file(name: &str) -> PathBuf {
     Path::new(file!())
@@ -152,7 +152,6 @@ fn test_bad_gzip_file() {
     }
 }
 
-
 #[test]
 fn test_non_existent_file() {
     let nzb = Nzb::parse_file("i dont exist");
@@ -192,11 +191,14 @@ fn test_file_with_missing_poster() {
             </segments>
         </file>
     </nzb>
-    "#.trim();
+    "#
+    .trim();
 
     let nzb = Nzb::parse(no_poster);
-    assert!(nzb.is_err_and(|e| e == ParseNzbError::FileAttribute { attribute: "poster".to_string() }))
-
+    assert!(nzb.is_err_and(|e| e
+        == ParseNzbError::FileAttribute {
+            attribute: "poster".to_string()
+        }))
 }
 
 #[test]
@@ -225,8 +227,10 @@ fn test_file_with_bad_date() {
     "#.trim();
 
     let nzb = Nzb::parse(no_poster);
-    assert!(nzb.is_err_and(|e| e == ParseNzbError::FileAttribute { attribute: "date".to_string() }))
-
+    assert!(nzb.is_err_and(|e| e
+        == ParseNzbError::FileAttribute {
+            attribute: "date".to_string()
+        }))
 }
 
 #[test]
@@ -252,9 +256,12 @@ fn test_file_with_missing_subject() {
             </segments>
         </file>
     </nzb>
-    "#.trim();
+    "#
+    .trim();
 
     let nzb = Nzb::parse(no_poster);
-    assert!(nzb.is_err_and(|e| e == ParseNzbError::FileAttribute { attribute: "subject".to_string() }))
-
+    assert!(nzb.is_err_and(|e| e
+        == ParseNzbError::FileAttribute {
+            attribute: "subject".to_string()
+        }))
 }

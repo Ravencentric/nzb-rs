@@ -1,5 +1,5 @@
-use thiserror::Error;
 use std::{io, path::PathBuf};
+use thiserror::Error;
 
 #[derive(Error, Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 /// Represents errors that can occur during the parsing of an NZB document.
