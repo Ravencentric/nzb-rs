@@ -19,7 +19,7 @@ pub enum ParseNzbError {
     #[error("Invalid or missing 'file' element in the NZB document. The NZB document must contain at least one valid 'file' element, and each 'file' must have at least one valid 'groups' and 'segments' element.")]
     FileElement,
 
-    /// Indicates an invalid or missing required attribute '{attribute}' in a 'file' element.
+    /// Indicates an invalid or missing required attribute in a 'file' element.
     #[error("Invalid or missing required attribute '{attribute}' in a 'file' element.")]
     FileAttribute {
         /// The name of the attribute that was invalid or missing.
