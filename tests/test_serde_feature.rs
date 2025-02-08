@@ -60,8 +60,8 @@ fn test_serde_feature(#[case] nzb_file: PathBuf) {
 }
 
 #[rstest]
-#[case::valid_nzb_with_one_missing_segment_nzb(get_file("valid_nzb_with_one_missing_segment.nzb"))]
-#[case::valid_nzb_with_one_missing_segment_nzb_gz(get_file("valid_nzb_with_one_missing_segment.nzb.gz"))]
+#[case::valid_nzb_with_bad_segments(get_file("valid_nzb_with_bad_segments.nzb"))]
+#[case::valid_nzb_with_bad_segments_gz(get_file("valid_nzb_with_bad_segments.nzb.gz"))]
 fn test_valid_nzb_with_one_missing_segment(#[case] nzb_file: PathBuf) {
     let original = Nzb::parse_file(nzb_file).unwrap();
     let serialized = serde_json::to_string(&original).unwrap();
@@ -77,7 +77,7 @@ fn test_valid_nzb_with_one_missing_segment(#[case] nzb_file: PathBuf) {
     assert!(!nzb.is_rar());
     assert!(!nzb.is_obfuscated());
     assert!(nzb.has_par2());
-    assert_eq!(nzb.size(), 21_965_221);
+    assert_eq!(nzb.size(), 20485917);
     assert_eq!(nzb.file().name(), Some("Big Buck Bunny - S01E01.mkv"));
     assert_eq!(nzb.file().stem(), Some("Big Buck Bunny - S01E01"));
     assert_eq!(nzb.file().extension(), Some("mkv"));
@@ -92,21 +92,11 @@ fn test_valid_nzb_with_one_missing_segment(#[case] nzb_file: PathBuf) {
             "Big Buck Bunny - S01E01.mkv.vol03+04.par2"
         ]
     );
-    // assert_eq!(
-    //     nzb.filestems(),
-    //     vec![
-    //         "Big Buck Bunny - S01E01",
-    //         "Big Buck Bunny - S01E01.mkv",
-    //         "Big Buck Bunny - S01E01.mkv.vol00+01",
-    //         "Big Buck Bunny - S01E01.mkv.vol01+02",
-    //         "Big Buck Bunny - S01E01.mkv.vol03+04"
-    //     ]
-    // );
-    // assert_eq!(nzb.extensions(), vec!["mkv", "par2"]);
+
     assert_eq!(nzb.posters(), vec!["John <nzb@nowhere.example>"]);
     assert_eq!(nzb.groups(), vec!["alt.binaries.boneless"]);
     assert_eq!(nzb.par2_size(), 5_183_128);
-    assert_eq!(nzb.par2_percentage().floor(), 23.0);
+    assert_eq!(nzb.par2_percentage().floor(), 25.0);
     assert_eq!(
         nzb.file(),
         &File::new(
@@ -165,17 +155,7 @@ fn test_valid_nzb_with_one_missing_segment(#[case] nzb_file: PathBuf) {
                     10u32,
                     "79a027e3bfde458ea2bd0db1632fc84e-7270120407913@example"
                 ),
-                Segment::new(
-                    739657u32,
-                    11u32,
-                    "fb2bd74e1257487a9240ef0cf81765cc-7147741101314@example"
-                ),
-                Segment::new(
-                    739647u32,
-                    12u32,
-                    "d39ca8be78c34e3fa6f3211f1b397b3a-4725950858191@example"
-                ),
-                // 13th Segment is missing here
+                // 11-13 segments are missing here
                 Segment::new(
                     739721u32,
                     14u32,
