@@ -1,5 +1,3 @@
-// Replacement intra-doc links for GitHub and crates.io. See https://linebender.org/blog/doc-include
-//! [`Nzb::parse`]: Nzb::parse
 #![doc = include_str!("../README.md")]
 
 mod errors;

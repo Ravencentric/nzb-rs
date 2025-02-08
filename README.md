@@ -22,11 +22,6 @@ Optional features:
 
 ## Example
 
-The heart of this library is the [`Nzb::parse`][] method, which handles parsing NZB files into structured data.
-
-<!-- Replacement intra-doc links for GitHub and crates.io. See https://linebender.org/blog/doc-include -->
-[`Nzb::parse`]: https://docs.rs/nzb-rs/latest/nzb_rs/struct.Nzb.html#method.parse
-
 ```rust
 use nzb_rs::{Nzb, ParseNzbError};
 
@@ -52,7 +47,6 @@ fn main() -> Result<(), ParseNzbError> {
     assert_eq!(nzb.file().name(), Some("Big Buck Bunny - S01E01.mkv"));
     Ok(())
 }
-
 ```
 
 ## Safety
