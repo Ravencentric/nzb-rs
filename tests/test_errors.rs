@@ -1,6 +1,7 @@
 use nzb_rs::{Nzb, ParseNzbError, ParseNzbFileError};
 use pretty_assertions::assert_eq;
 use std::path::{Path, PathBuf};
+use std::io;
 
 fn get_file(name: &str) -> PathBuf {
     Path::new(file!())
@@ -161,7 +162,7 @@ fn test_non_existent_file() {
 
     match error {
         ParseNzbFileError::Io { source, file } => {
-            assert_eq!(source.to_string(), "The system cannot find the file specified. (os error 2)".to_string());
+            assert_eq!(source.kind(), io::ErrorKind::NotFound);
             assert_eq!(file, Path::new("i dont exist"));
         }
         _ => panic!(),
