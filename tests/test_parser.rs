@@ -3,13 +3,12 @@ use nzb_rs::{File, Nzb, Segment};
 use pretty_assertions::assert_eq;
 use rstest::rstest;
 use std::file;
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 
 fn get_file(name: &str) -> PathBuf {
-    Path::new(file!())
-        .parent()
+    dunce::canonicalize(file!())
         .unwrap()
-        .canonicalize()
+        .parent()
         .unwrap()
         .join("nzbs")
         .join(name)

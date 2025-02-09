@@ -4,10 +4,9 @@ use std::io;
 use std::path::{Path, PathBuf};
 
 fn get_file(name: &str) -> PathBuf {
-    Path::new(file!())
-        .parent()
+    dunce::canonicalize(file!())
         .unwrap()
-        .canonicalize()
+        .parent()
         .unwrap()
         .join("nzbs")
         .join(name)

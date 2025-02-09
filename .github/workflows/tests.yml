@@ -22,7 +22,10 @@ jobs:
       - name: Install rust toolchain
         uses: actions-rust-lang/setup-rust-toolchain@v1
 
+      - name: Install cargo-hack
+        uses: taiki-e/install-action@cargo-hack
+
       - run: cargo build --locked
-      - run: cargo test --features serde
-      - run: cargo clippy
+      - run: cargo hack test --each-feature --locked
+      - run: cargo clippy --all-features --all-targets
       - run: cargo fmt --check

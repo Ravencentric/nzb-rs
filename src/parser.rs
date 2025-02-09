@@ -243,7 +243,7 @@ mod tests {
     use std::path::Path;
 
     fn get_stem(p: &str) -> &str {
-        Path::new(p).file_stem().map(|f| f.to_str()).flatten().unwrap()
+        Path::new(p).file_stem().and_then(|f| f.to_str()).unwrap()
     }
 
     /// https://github.com/sabnzbd/sabnzbd/blob/42c00dda8455c82d691615259775a30661a752bd/tests/test_deobfuscate_filenames.py#L43
