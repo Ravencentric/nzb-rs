@@ -275,7 +275,7 @@ impl Nzb {
                 .map_err(|source| ParseNzbFileError::from_gzip_err(source, nzb.as_ref()))?;
             content
         } else {
-            fs::read_to_string(file).map_err(|source| ParseNzbFileError::from_gzip_err(source, nzb.as_ref()))?
+            fs::read_to_string(file).map_err(|source| ParseNzbFileError::from_io_err(source, nzb.as_ref()))?
         };
 
         Ok(Self::parse(content)?)
