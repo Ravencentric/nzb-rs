@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.4](https://github.com/Ravencentric/nzb-rs/compare/v0.5.3...v0.5.4) - 2025-02-09
+
+### Fixed
+
+- version
+- minor refactor
+
+### Other
+
+- run cargo hack
+
 ## [0.5.2](https://github.com/Ravencentric/nzb-rs/compare/v0.5.1...v0.5.2) - 2025-02-09
 
 ### Fixed
