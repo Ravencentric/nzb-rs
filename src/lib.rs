@@ -146,7 +146,7 @@ impl File {
     pub fn has_extension(&self, ext: impl AsRef<str>) -> bool {
         let ext = ext.as_ref().strip_prefix(".").unwrap_or_else(|| ext.as_ref()).trim();
         self.extension()
-            .is_some_and(|file_ext| file_ext.to_lowercase() == ext.to_lowercase())
+            .is_some_and(|file_ext| file_ext.eq_ignore_ascii_case(ext))
     }
 
     /// Return [`true`] if the file is a `.par2` file, [`false`] otherwise.
@@ -257,25 +257,23 @@ impl Nzb {
     /// }
     /// ```
     pub fn parse_file(nzb: impl AsRef<Path>) -> Result<Self, ParseNzbFileError> {
-        let file = nzb
-            .as_ref()
-            .canonicalize()
-            .map_err(|source| ParseNzbFileError::from_io_err(source, nzb.as_ref()))?;
+        let file =
+            dunce::canonicalize(nzb.as_ref()).map_err(|source| ParseNzbFileError::from_io_err(source, nzb.as_ref()))?;
 
         let content = if file
             .extension()
             .and_then(|f| f.to_str())
             .is_some_and(|f| f.trim().eq_ignore_ascii_case("gz"))
         {
-            let gzipped = fs::read(file).map_err(|source| ParseNzbFileError::from_gzip_err(source, nzb.as_ref()))?;
+            let gzipped = fs::read(&file).map_err(|source| ParseNzbFileError::from_gzip_err(source, file.clone()))?;
             let mut decoder = GzDecoder::new(&gzipped[..]);
             let mut content = String::new();
             decoder
                 .read_to_string(&mut content)
-                .map_err(|source| ParseNzbFileError::from_gzip_err(source, nzb.as_ref()))?;
+                .map_err(|source| ParseNzbFileError::from_gzip_err(source, file))?;
             content
         } else {
-            fs::read_to_string(file).map_err(|source| ParseNzbFileError::from_io_err(source, nzb.as_ref()))?
+            fs::read_to_string(&file).map_err(|source| ParseNzbFileError::from_io_err(source, file.clone()))?
         };
 
         Ok(Self::parse(content)?)
@@ -321,7 +319,10 @@ impl Nzb {
 
     /// Total size of all the `.par2` files.
     pub fn par2_size(&self) -> u64 {
-        self.files.iter().filter(|f| f.is_par2()).map(|file| file.size()).sum()
+        self.files
+            .iter()
+            .filter_map(|f| if f.is_par2() { Some(f.size()) } else { None })
+            .sum()
     }
 
     /// Percentage of the size of all the `.par2` files relative to the total size.

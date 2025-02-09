@@ -145,8 +145,25 @@ fn test_bad_gzip_file() {
 
     match error {
         ParseNzbFileError::Gzip { source, file } => {
-            assert_eq!(source.to_string(), "invalid gzip header".to_string());
+            assert_eq!(source.kind(), io::ErrorKind::InvalidInput);
             assert_eq!(file, get_file("invalid_gzipped_nzb.nzb.gz"));
+        }
+        _ => panic!(),
+    }
+}
+
+#[test]
+fn test_bad_nzb_file() {
+    let file = get_file("invalid_bytes.nzb");
+    let nzb = Nzb::parse_file(file);
+    assert!(nzb.is_err());
+
+    let error = nzb.unwrap_err();
+
+    match error {
+        ParseNzbFileError::Io { source, file } => {
+            assert_eq!(source.kind(), io::ErrorKind::InvalidData);
+            assert_eq!(file, get_file("invalid_bytes.nzb"));
         }
         _ => panic!(),
     }
