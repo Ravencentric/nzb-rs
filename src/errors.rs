@@ -46,8 +46,8 @@ impl From<roxmltree::Error> for ParseNzbError {
 #[derive(Error, Debug)]
 /// Represents errors that can occur when attempting to parse an NZB file from a file path.
 pub enum ParseNzbFileError {
-    /// Input/Output error encountered while trying to access or read the NZB file.
-    #[error("I/O error while accessing file '{file}': {source}")]
+    /// Input/Output error encountered while trying to read the NZB file.
+    #[error("I/O error while reading file '{file}': {source}")]
     Io {
         /// The underlying I/O error that occurred.
         source: io::Error,
