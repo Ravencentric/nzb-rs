@@ -115,6 +115,11 @@ impl File {
         let re_subject_basic_filename =
             regex!(r"\b([\w\-+()' .,]+(?:\[[\w\-/+()' .,]*][\w\-+()' .,]*)*\.[A-Za-z0-9]{2,4})\b");
 
+        // https://regex101.com/r/bDl87Z/1
+        // [011/116] - [AC-FFF] Highschool DxD BorN - 02 [BD][1080p-Hi10p] FLAC][Dual-Audio][442E5446].mkv yEnc (1/2401) 1720916370
+        let re_standard_ish_subject_filename_no_quotes =
+            regex!(r"^(\[|\()(\d+/\d+)(\]|\))\s-\s(.*)\syEnc\s(\[|\()(\d+/\d+)(\]|\))\s\d+");
+
         if let Some(captured) = re_subject_filename_quotes.captures(&self.subject) {
             return captured.get(1).map(|m| m.as_str().trim());
         }
@@ -122,6 +127,11 @@ impl File {
         if let Some(captured) = re_subject_basic_filename.captures(&self.subject) {
             return captured.get(1).map(|m| m.as_str().trim());
         }
+
+        if let Some(captured) = re_standard_ish_subject_filename_no_quotes.captures(&self.subject) {
+            return captured.get(4).map(|m| m.as_str().trim());
+        }
+
         None
     }
 

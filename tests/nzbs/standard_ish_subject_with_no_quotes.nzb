@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE nzb PUBLIC "-//newzBin//DTD NZB 1.1//EN" "http://www.newzbin.com/DTD/nzb/nzb-1.1.dtd">
+<nzb
+	xmlns="http://www.newzbin.com/DTD/2003/nzb">
+	<file poster="John &lt;nzb@nowhere.example&gt;" date="1706440709" subject="[2/5] - Big Buck Bunny - S01E01.mkv.par2 yEnc (1/1) 920">
+		<groups>
+			<group>alt.binaries.boneless</group>
+		</groups>
+		<segments>
+			<segment bytes="1089" number="1">13bbb36ae40a4ce4980ec253ec6edc3b-6171933287178@example</segment>
+		</segments>
+	</file>
+	<file poster="John &lt;nzb@nowhere.example&gt;" date="1706440709" subject="[3/5] - Big Buck Bunny - S01E01.mkv.vol00+01.par2 yEnc (1/2) 717788">
+		<groups>
+			<group>alt.binaries.boneless</group>
+		</groups>
+		<segments>
+			<segment bytes="739843" number="1">1aabeb6f7e2e4db387ed51fae3db040e-1417784129942@example</segment>
+			<segment bytes="1174" number="2">19a2ea9af1f54cdb8bdddca1ad42a9dc-1370391802864@example</segment>
+		</segments>
+	</file>
+	<file poster="John &lt;nzb@nowhere.example&gt;" date="1706440709" subject="[4/5] - Big Buck Bunny - S01E01.mkv.vol01+02.par2 yEnc (1/3) 1434656">
+		<groups>
+			<group>alt.binaries.boneless</group>
+		</groups>
+		<segments>
+			<segment bytes="739649" number="1">64e1c6ecb6914d87824c0d411e52917f-6967081591050@example</segment>
+			<segment bytes="739597" number="2">ae31221a209c4b7b9afa69b6be212979-2644801742954@example</segment>
+			<segment bytes="1248" number="3">6773d51eb3884725b814afaf3d0ebf28-2259383785250@example</segment>
+		</segments>
+	</file>
+	<file poster="John &lt;nzb@nowhere.example&gt;" date="1706440709" subject="[5/5] - Big Buck Bunny - S01E01.mkv.vol03+04.par2 yEnc (1/5) 2869192">
+		<groups>
+			<group>alt.binaries.boneless</group>
+		</groups>
+		<segments>
+			<segment bytes="739580" number="1">04d3d54824f648c4ba90e06181b1777d-3272981412906@example</segment>
+			<segment bytes="739586" number="2">ca725ed47e7141c0812d8133c3bd5db0-9561930885601@example</segment>
+			<segment bytes="739487" number="3">341867bf48584c74a2682245d25ce371-1681005817037@example</segment>
+			<segment bytes="739661" number="4">c78b0cd6c79a43b2bce57ee4e1a62a5d-6077893561754@example</segment>
+			<segment bytes="2214" number="5">70c387cbc9e449698ac42bb38a00f188-8061178929079@example</segment>
+		</segments>
+	</file>
+	<file poster="John &lt;nzb@nowhere.example&gt;" date="1706440708" subject="[011/116] - [AC-FFF] Highschool DxD BorN - 02 [BD][1080p-Hi10p] FLAC][Dual-Audio][442E5446].mkv yEnc (1/2401) 1720916370">
+		<groups>
+			<group>alt.binaries.boneless</group>
+		</groups>
+		<segments>
+			<segment bytes="739067" number="1">9cacde4c986547369becbf97003fb2c5-9483514693959@example</segment>
+			<segment bytes="739549" number="2">70a3a038ce324e618e2751e063d6a036-7285710986748@example</segment>
+			<segment bytes="739728" number="3">a209875cefd44440aa91590508b48f5b-4625756912881@example</segment>
+			<segment bytes="739664" number="4">44057720ed4e45e4bce21d53249d03f8-8250738040266@example</segment>
+			<segment bytes="739645" number="5">cfc13d14583c484483aa49ac420bad27-9491395432062@example</segment>
+			<segment bytes="739538" number="6">5e90857531be401e9d0b632221fe2fb7-9854527985639@example</segment>
+			<segment bytes="739708" number="7">c33a2bba79494840a09d750b19d3b287-2550637855678@example</segment>
+			<segment bytes="739490" number="8">38006019d94f4ecc8f19c389c00f1ebe-7841585708380@example</segment>
+			<segment bytes="739667" number="9">b75a2425bef24fd5affb00dc3db789f6-7051027232703@example</segment>
+			<segment bytes="739540" number="10">79a027e3bfde458ea2bd0db1632fc84e-7270120407913@example</segment>
+			<segment bytes="739657" number="11">fb2bd74e1257487a9240ef0cf81765cc-7147741101314@example</segment>
+			<segment bytes="739647" number="12">d39ca8be78c34e3fa6f3211f1b397b3a-4725950858191@example</segment>
+			<segment bytes="739668" number="13">a4c15599055848dda1eff3b6b406fa78-8111735210252@example</segment>
+			<segment bytes="739721" number="14">2f1cec363ed24584b4127af86ac312ad-7204153818612@example</segment>
+			<segment bytes="739740" number="15">30ff3514896543a8ac91ec80346a5d40-9134304686352@example</segment>
+			<segment bytes="739538" number="16">1f75cfa20d884b5b972cfd2e9ebef249-8919850122587@example</segment>
+			<segment bytes="739646" number="17">8e22b0f973de4393a0a30ab094565316-6722799721412@example</segment>
+			<segment bytes="739610" number="18">faddf83650cc4de1a8bee68cffca40a1-5979589815618@example</segment>
+			<segment bytes="739514" number="19">6b8c23e43d4240da812b547babdc0423-6409257710918@example</segment>
+			<segment bytes="739920" number="20">802bd0dcef134ac690044e0a09fece60-8492061912475@example</segment>
+			<segment bytes="739634" number="21">efc4b3966a1f4b7787677e9e9a214727-5444471572012@example</segment>
+			<segment bytes="739691" number="22">247efca709114fd181bcaef0f487925f-4076317880026@example</segment>
+			<segment bytes="739638" number="23">665d9fc5edba4faca68ae835b702b4c7-9814601723860@example</segment>
+			<segment bytes="510541" number="24">962fddf3e07444988731b52aeaa9b2aa-1283919353788@example</segment>
+		</segments>
+	</file>
+</nzb>

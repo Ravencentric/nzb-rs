@@ -425,6 +425,27 @@ fn test_valid_nzb_with_bad_segments(#[case] nzb_file: PathBuf) {
 }
 
 #[test]
+fn test_standard_ish_subject_with_no_quotes() {
+    let file = get_file("standard_ish_subject_with_no_quotes.nzb");
+    let nzb = Nzb::parse_file(file).unwrap();
+
+    assert_eq!(
+        nzb.file().name(),
+        Some("[AC-FFF] Highschool DxD BorN - 02 [BD][1080p-Hi10p] FLAC][Dual-Audio][442E5446].mkv")
+    );
+    assert_eq!(
+        nzb.file().stem(),
+        Some("[AC-FFF] Highschool DxD BorN - 02 [BD][1080p-Hi10p] FLAC][Dual-Audio][442E5446]")
+    );
+    assert_eq!(nzb.file().extension(), Some("mkv"));
+    assert_eq!(nzb.file().is_par2(), false);
+    assert_eq!(nzb.file().is_rar(), false);
+    assert_eq!(nzb.is_rar(), false);
+    assert_eq!(nzb.has_par2(), true);
+    assert_eq!(nzb.is_obfuscated(), false);
+}
+
+#[test]
 fn test_bad_subject() {
     let file = get_file("bad_subject.nzb");
     let nzb = Nzb::parse_file(file).unwrap();
