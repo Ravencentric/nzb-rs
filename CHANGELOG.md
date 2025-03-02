@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.6](https://github.com/Ravencentric/nzb-rs/compare/v0.5.5...v0.5.6) - 2025-02-24
+
+### Other
+
+- *(deps)* bump the actions group with 3 updates (#21)
+
 ## [0.5.5](https://github.com/Ravencentric/nzb-rs/compare/v0.5.4...v0.5.5) - 2025-02-17
 
 ### Fixed
