@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.7](https://github.com/Ravencentric/nzb-rs/compare/v0.5.6...v0.5.7) - 2025-03-03
+
+### Other
+
+- *(deps)* update deps
+- update to rust 2024
+- *(deps)* bump the actions group with 4 updates ([#23](https://github.com/Ravencentric/nzb-rs/pull/23))
+
 ## [0.5.6](https://github.com/Ravencentric/nzb-rs/compare/v0.5.5...v0.5.6) - 2025-02-24
 
 ### Other
