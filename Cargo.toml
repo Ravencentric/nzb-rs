@@ -5,7 +5,8 @@ description = "A spec compliant parser for NZB files"
 authors = ["Ravencentric <me@ravencentric.cc>"]
 readme = "README.md"
 license = "MIT OR Apache-2.0"
-edition = "2021"
+edition = "2024"
+rust-version = "1.85"
 keywords = ["nzb", "usenet", "parser"]
 categories = ["parser-implementations", "parsing"]
 repository = "https://github.com/Ravencentric/nzb-rs"
@@ -17,7 +18,7 @@ itertools = "0.14.0"
 lazy-regex = "3.4.1"
 roxmltree = "0.20.0"
 thiserror = "2.0.12"
-flate2 = "1.1.0"
+flate2 = { version = "1.1.0", default-features = false, features = ["zlib-rs"] }
 dunce = "1.0.5"
 serde = { version = "1.0", optional = true, features = ["derive"] }
 

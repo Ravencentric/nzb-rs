@@ -6,17 +6,23 @@ use thiserror::Error;
 pub enum ParseNzbError {
     /// Inidcates an invalid or missing 'groups' element within the 'file' element.
     /// Each 'file' element must contain at least one valid 'groups' element.
-    #[error("Invalid or missing 'groups' element within the 'file' element. Each 'file' element must contain at least one valid 'groups' element.")]
+    #[error(
+        "Invalid or missing 'groups' element within the 'file' element. Each 'file' element must contain at least one valid 'groups' element."
+    )]
     GroupsElement,
 
     /// Indicates an invalid or missing 'segments' element within the 'file' element.
     /// Each 'file' element must contain at least one valid 'segments' element.
-    #[error("Invalid or missing 'segments' element within the 'file' element. Each 'file' element must contain at least one valid 'segments' element.")]
+    #[error(
+        "Invalid or missing 'segments' element within the 'file' element. Each 'file' element must contain at least one valid 'segments' element."
+    )]
     SegmentsElement,
 
     /// Indicates an invalid or missing 'file' element in the NZB document.
     /// The NZB document must contain at least one valid 'file' element, and each 'file' must have at least one valid 'groups' and 'segments' element.
-    #[error("Invalid or missing 'file' element in the NZB document. The NZB document must contain at least one valid 'file' element, and each 'file' must have at least one valid 'groups' and 'segments' element.")]
+    #[error(
+        "Invalid or missing 'file' element in the NZB document. The NZB document must contain at least one valid 'file' element, and each 'file' must have at least one valid 'groups' and 'segments' element."
+    )]
     FileElement,
 
     /// Indicates an invalid or missing required attribute in a 'file' element.
