@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.9](https://github.com/Ravencentric/nzb-rs/compare/v0.5.8...v0.5.9) - 2025-06-01
+
+### Other
+
+- update deps and the rust toolchain
+- *(deps)* bump chrono from 0.4.40 to 0.4.41 in the actions group ([#28](https://github.com/Ravencentric/nzb-rs/pull/28))
+
 ## [0.5.8](https://github.com/Ravencentric/nzb-rs/compare/v0.5.7...v0.5.8) - 2025-04-07
 
 ### Other
