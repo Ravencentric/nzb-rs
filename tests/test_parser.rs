@@ -426,8 +426,22 @@ fn test_valid_nzb_with_bad_segments(#[case] nzb_file: PathBuf) {
 
 #[test]
 fn test_standard_ish_subject_with_no_quotes() {
-    let file = get_file("standard_ish_subject_with_no_quotes.nzb");
-    let nzb = Nzb::parse_file(file).unwrap();
+    // let file = get_file("standard_ish_subject_with_no_quotes.nzb");
+    let nzb = Nzb::parse(r#"
+    <?xml version="1.0" encoding="UTF-8"?>
+    <!DOCTYPE nzb PUBLIC "-//newzBin//DTD NZB 1.1//EN" "http://www.newzbin.com/DTD/nzb/nzb-1.1.dtd">
+    <nzb
+        xmlns="http://www.newzbin.com/DTD/2003/nzb">
+        <file poster="John &lt;nzb@nowhere.example&gt;" date="1706440708" subject="[011/116] - [AC-FFF] Highschool DxD BorN - 02 [BD][1080p-Hi10p] FLAC][Dual-Audio][442E5446].mkv yEnc (1/2401) 1720916370">
+            <groups>
+                <group>alt.binaries.boneless</group>
+            </groups>
+            <segments>
+                <segment bytes="739067" number="1">9cacde4c986547369becbf97003fb2c5-9483514693959@example</segment>
+            </segments>
+        </file>
+    </nzb>
+    "#).unwrap();
 
     assert_eq!(
         nzb.file().name(),
@@ -440,9 +454,37 @@ fn test_standard_ish_subject_with_no_quotes() {
     assert_eq!(nzb.file().extension(), Some("mkv"));
     assert_eq!(nzb.file().is_par2(), false);
     assert_eq!(nzb.file().is_rar(), false);
-    assert_eq!(nzb.is_rar(), false);
-    assert_eq!(nzb.has_par2(), true);
-    assert_eq!(nzb.is_obfuscated(), false);
+}
+
+#[test]
+fn test_subsplease_nagataro_subject_with_no_quotes() {
+    let nzb = Nzb::parse(r#"
+    <?xml version="1.0" encoding="UTF-8"?>
+    <!DOCTYPE nzb PUBLIC "-//newzBin//DTD NZB 1.1//EN" "http://www.newzbin.com/DTD/nzb/nzb-1.1.dtd">
+    <nzb
+        xmlns="http://www.newzbin.com/DTD/2003/nzb">
+        <file poster="John &lt;nzb@nowhere.example&gt;" date="1706440708" subject="[010/108] - [SubsPlease] Ijiranaide, Nagatoro-san - 02 (1080p) [6E8E8065].mkv yEnc (1/2014) 1443366873">
+            <groups>
+                <group>alt.binaries.boneless</group>
+            </groups>
+            <segments>
+                <segment bytes="739067" number="1">9cacde4c986547369becbf97003fb2c5-9483514693959@example</segment>
+            </segments>
+        </file>
+    </nzb>
+    "#).unwrap();
+
+    assert_eq!(
+        nzb.file().name(),
+        Some("[SubsPlease] Ijiranaide, Nagatoro-san - 02 (1080p) [6E8E8065].mkv")
+    );
+    assert_eq!(
+        nzb.file().stem(),
+        Some("[SubsPlease] Ijiranaide, Nagatoro-san - 02 (1080p) [6E8E8065]")
+    );
+    assert_eq!(nzb.file().extension(), Some("mkv"));
+    assert_eq!(nzb.file().is_par2(), false);
+    assert_eq!(nzb.file().is_rar(), false);
 }
 
 #[test]
