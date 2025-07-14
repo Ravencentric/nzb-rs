@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.10](https://github.com/Ravencentric/nzb-rs/compare/v0.5.9...v0.5.10) - 2025-07-14
+
+### Fixed
+
+- extracting filename from subject should no longer strip the release group in some cases
+
+### Other
+
+- *(deps)* bump flate2 from 1.1.1 to 1.1.2 in the actions group ([#30](https://github.com/Ravencentric/nzb-rs/pull/30))
+
 ## [0.5.9](https://github.com/Ravencentric/nzb-rs/compare/v0.5.8...v0.5.9) - 2025-06-01
 
 ### Other
