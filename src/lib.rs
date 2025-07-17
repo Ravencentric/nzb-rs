@@ -296,7 +296,11 @@ impl Nzb {
     /// and may not always be accurate.
     pub fn file(&self) -> &File {
         // self.files is guranteed to have atleast one file, so we can safely unwrap().
-        self.files.iter().filter(|file| !file.is_par2()).max_by_key(|file| file.size()).unwrap()
+        self.files
+            .iter()
+            .filter(|file| !file.is_par2())
+            .max_by_key(|file| file.size())
+            .unwrap()
     }
 
     /// Total size of all the files in the NZB.
