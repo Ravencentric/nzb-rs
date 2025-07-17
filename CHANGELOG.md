@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.12](https://github.com/Ravencentric/nzb-rs/compare/v0.5.11...v0.5.12) - 2025-07-17
+
+### Fixed
+
+- cargo fmt
+- exclude par2 files when trying to determine the primary file
+
 ## [0.5.11](https://github.com/Ravencentric/nzb-rs/compare/v0.5.10...v0.5.11) - 2025-07-17
 
 ### Fixed
