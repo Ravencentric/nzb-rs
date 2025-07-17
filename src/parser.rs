@@ -6,8 +6,8 @@ use roxmltree::Document;
 
 pub(crate) fn sanitize_xml(xml: &str) -> &str {
     // roxmltree doesn't support XML declarations or DOCTYPEs, so we need to remove them.
-    let xml_heading_re = regex!(r"^(?i)<\?xml\s+version.*\?>");
-    let xml_doctype_re = regex!(r"^(?i)<!DOCTYPE.*>");
+    let xml_heading_re = regex!(r"^(?i)<\?xml\s+version.*?\?>");
+    let xml_doctype_re = regex!(r"^(?i)<!DOCTYPE.*?>");
     let mut content = xml.trim();
     if let Some(found) = xml_heading_re.find(content) {
         content = &content[found.end()..];
