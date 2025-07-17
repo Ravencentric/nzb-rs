@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.11](https://github.com/Ravencentric/nzb-rs/compare/v0.5.10...v0.5.11) - 2025-07-17
+
+### Fixed
+
+- make sanitizer regex less greedy
+
+### Other
+
+- update deps
+
 ## [0.5.10](https://github.com/Ravencentric/nzb-rs/compare/v0.5.9...v0.5.10) - 2025-07-14
 
 ### Fixed
