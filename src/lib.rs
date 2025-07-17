@@ -292,11 +292,11 @@ impl Nzb {
     }
 
     /// The main content file (episode, movie, etc) in the NZB.
-    /// This is determined by finding the largest file in the NZB
+    /// This is determined by finding the largest non `par2` file in the NZB
     /// and may not always be accurate.
     pub fn file(&self) -> &File {
         // self.files is guranteed to have atleast one file, so we can safely unwrap().
-        self.files.iter().max_by_key(|file| file.size()).unwrap()
+        self.files.iter().filter(|file| !file.is_par2()).max_by_key(|file| file.size()).unwrap()
     }
 
     /// Total size of all the files in the NZB.
