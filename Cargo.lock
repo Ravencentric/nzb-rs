@@ -308,7 +308,7 @@ dependencies = [
 
 [[package]]
 name = "nzb-rs"
-version = "0.5.12"
+version = "0.5.13"
 dependencies = [
  "chrono",
  "dunce",
