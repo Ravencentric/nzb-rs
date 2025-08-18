@@ -11,10 +11,10 @@ pub(crate) fn extract_filename_from_subject(subject: &str) -> Option<&str> {
     // https://github.com/sabnzbd/sabnzbd/blob/02b4a116dd4b46b2d2f33f7bbf249f2294458f2e/sabnzbd/nzbstuff.py#L104-L106
     if let Some(captured) = regex!(r#""(.*)""#).captures(subject) {
         let trimmed = captured.get(1).map(|m| m.as_str().trim());
-        if let Some(s) = trimmed {
-            if !s.is_empty() {
-                return Some(s);
-            }
+        if let Some(s) = trimmed
+            && !s.is_empty()
+        {
+            return Some(s);
         }
     }
 
@@ -25,10 +25,10 @@ pub(crate) fn extract_filename_from_subject(subject: &str) -> Option<&str> {
         regex!(r"^(?:\[|\()(?:\d+/\d+)(?:\]|\))\s-\s(.*)\syEnc\s(?:\[|\()(?:\d+/\d+)(?:\]|\))\s\d+").captures(subject)
     {
         let trimmed = captured.get(1).map(|m| m.as_str().trim());
-        if let Some(s) = trimmed {
-            if !s.is_empty() {
-                return Some(s);
-            }
+        if let Some(s) = trimmed
+            && !s.is_empty()
+        {
+            return Some(s);
         }
     }
 
@@ -38,10 +38,10 @@ pub(crate) fn extract_filename_from_subject(subject: &str) -> Option<&str> {
         regex!(r"\b([\w\-+()' .,]+(?:\[[\w\-/+()' .,]*][\w\-+()' .,]*)*\.[A-Za-z0-9]{2,4})\b").captures(subject)
     {
         let trimmed = captured.get(1).map(|m| m.as_str().trim());
-        if let Some(s) = trimmed {
-            if !s.is_empty() {
-                return Some(s);
-            }
+        if let Some(s) = trimmed
+            && !s.is_empty()
+        {
+            return Some(s);
         }
     }
 
