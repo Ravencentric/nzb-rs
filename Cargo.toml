@@ -6,7 +6,7 @@ authors = ["Ravencentric <me@ravencentric.cc>"]
 readme = "README.md"
 license = "MIT OR Apache-2.0"
 edition = "2024"
-rust-version = "1.87"
+rust-version = "1.89"
 keywords = ["nzb", "usenet", "parser"]
 categories = ["parser-implementations", "parsing"]
 repository = "https://github.com/Ravencentric/nzb-rs"
@@ -20,7 +20,7 @@ itertools = "0.14.0"
 lazy-regex = "3.4.1"
 roxmltree = "0.20.0"
 serde = { version = "1.0", optional = true, features = ["derive"] }
-thiserror = "2.0.12"
+thiserror = "2.0.15"
 
 [features]
 serde = ["dep:serde", "chrono/serde"]

@@ -2,6 +2,7 @@
 
 mod errors;
 mod parser;
+mod subparsers;
 
 pub use crate::errors::{ParseNzbError, ParseNzbFileError};
 use crate::parser::{parse_files, parse_metadata, sabnzbd_is_obfuscated, sanitize_xml};
@@ -110,31 +111,7 @@ impl File {
     /// Complete name of the file with it's extension extracted from the subject.
     /// May return [`None`] if it fails to extract the name.
     pub fn name(&self) -> Option<&str> {
-        // The order of regular expressions is deliberate; patterns are arranged
-        // from most specific to most general to avoid broader patterns incorrectly matching.
-
-        // https://github.com/sabnzbd/sabnzbd/blob/02b4a116dd4b46b2d2f33f7bbf249f2294458f2e/sabnzbd/nzbstuff.py#L104-L106
-        if let Some(captured) = regex!(r#""([^"]*)""#).captures(&self.subject) {
-            return captured.get(1).map(|m| m.as_str().trim());
-        }
-
-        // https://regex101.com/r/B03qZs/2
-        // [011/116] - [AC-FFF] Highschool DxD BorN - 02 [BD][1080p-Hi10p] FLAC][Dual-Audio][442E5446].mkv yEnc (1/2401) 1720916370
-        if let Some(captured) =
-            regex!(r"^(?:\[|\()(?:\d+/\d+)(?:\]|\))\s-\s(.*)\syEnc\s(?:\[|\()(?:\d+/\d+)(?:\]|\))\s\d+")
-                .captures(&self.subject)
-        {
-            return captured.get(1).map(|m| m.as_str().trim());
-        }
-
-        // https://github.com/sabnzbd/sabnzbd/blob/02b4a116dd4b46b2d2f33f7bbf249f2294458f2e/sabnzbd/nzbstuff.py#L104-L106
-        if let Some(captured) = regex!(r"\b([\w\-+()' .,]+(?:\[[\w\-/+()' .,]*][\w\-+()' .,]*)*\.[A-Za-z0-9]{2,4})\b")
-            .captures(&self.subject)
-        {
-            return captured.get(1).map(|m| m.as_str().trim());
-        }
-
-        None
+        subparsers::extract_filename_from_subject(&self.subject)
     }
 
     /// Base name of the file without it's extension extracted from the [`File::name`].

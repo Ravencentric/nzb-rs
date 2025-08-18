@@ -47,17 +47,17 @@ pub(crate) fn parse_metadata(nzb: &Document) -> Meta {
                     title = title.or(meta.text().map(String::from));
                 }
                 "password" => {
-                    if let Some(text) = meta.text().map(String::from) {
-                        if !passwords.contains(&text) {
-                            passwords.push(text);
-                        }
+                    if let Some(text) = meta.text().map(String::from)
+                        && !passwords.contains(&text)
+                    {
+                        passwords.push(text);
                     }
                 }
                 "tag" => {
-                    if let Some(text) = meta.text().map(String::from) {
-                        if !tags.contains(&text) {
-                            tags.push(text);
-                        }
+                    if let Some(text) = meta.text().map(String::from)
+                        && !tags.contains(&text)
+                    {
+                        tags.push(text);
                     }
                 }
                 "category" => {
