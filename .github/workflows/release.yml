@@ -20,14 +20,14 @@ jobs:
       contents: write
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
         with:
           fetch-depth: 0
           token: ${{ secrets.PAT }}
       - name: Install Rust toolchain
-        uses: actions-rust-lang/setup-rust-toolchain@v1
+        uses: actions-rust-lang/setup-rust-toolchain@fb51252c7ba57d633bc668f941da052e410add48 # v1.13.0
       - name: Run release-plz
-        uses: release-plz/action@v0.5
+        uses: release-plz/action@f9715bc3b46e211f764f4440a221ddb89ae8abb3 # v0.5.112
         with:
           command: release
         env:
@@ -46,14 +46,14 @@ jobs:
       cancel-in-progress: false
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
         with:
           fetch-depth: 0
           token: ${{ secrets.PAT }}
       - name: Install Rust toolchain
-        uses: actions-rust-lang/setup-rust-toolchain@v1
+        uses: actions-rust-lang/setup-rust-toolchain@fb51252c7ba57d633bc668f941da052e410add48 # v1.13.0
       - name: Run release-plz
-        uses: release-plz/action@v0.5
+        uses: release-plz/action@f9715bc3b46e211f764f4440a221ddb89ae8abb3 # v0.5.112
         with:
           command: release-pr
         env:
