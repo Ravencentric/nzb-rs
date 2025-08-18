@@ -10,7 +10,12 @@ pub(crate) fn extract_filename_from_subject(subject: &str) -> Option<&str> {
     // We use a more relaxed version of what SABnzbd does:
     // https://github.com/sabnzbd/sabnzbd/blob/02b4a116dd4b46b2d2f33f7bbf249f2294458f2e/sabnzbd/nzbstuff.py#L104-L106
     if let Some(captured) = regex!(r#""(.*)""#).captures(subject) {
-        return captured.get(1).map(|m| m.as_str().trim());
+        let trimmed = captured.get(1).map(|m| m.as_str().trim());
+        if let Some(s) = trimmed {
+            if !s.is_empty() {
+                return Some(s);
+            }
+        }
     }
 
     // Case 2: Subject follows a specific pattern.
@@ -19,7 +24,12 @@ pub(crate) fn extract_filename_from_subject(subject: &str) -> Option<&str> {
     if let Some(captured) =
         regex!(r"^(?:\[|\()(?:\d+/\d+)(?:\]|\))\s-\s(.*)\syEnc\s(?:\[|\()(?:\d+/\d+)(?:\]|\))\s\d+").captures(subject)
     {
-        return captured.get(1).map(|m| m.as_str().trim());
+        let trimmed = captured.get(1).map(|m| m.as_str().trim());
+        if let Some(s) = trimmed {
+            if !s.is_empty() {
+                return Some(s);
+            }
+        }
     }
 
     // Case 3: Something that might look like a filename.
@@ -27,7 +37,12 @@ pub(crate) fn extract_filename_from_subject(subject: &str) -> Option<&str> {
     if let Some(captured) =
         regex!(r"\b([\w\-+()' .,]+(?:\[[\w\-/+()' .,]*][\w\-+()' .,]*)*\.[A-Za-z0-9]{2,4})\b").captures(subject)
     {
-        return captured.get(1).map(|m| m.as_str().trim());
+        let trimmed = captured.get(1).map(|m| m.as_str().trim());
+        if let Some(s) = trimmed {
+            if !s.is_empty() {
+                return Some(s);
+            }
+        }
     }
 
     None
