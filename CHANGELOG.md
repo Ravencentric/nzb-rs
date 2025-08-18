@@ -7,6 +7,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.13](https://github.com/Ravencentric/nzb-rs/compare/v0.5.12...v0.5.13) - 2025-08-18
+
+### Fixed
+
+- replace nested if with the new if let chains
+- handle empty string filename
+- needless borrow (thanks clippy)
+- handle filenames with nested quotes in the subject
+
+### Other
+
+- pin workflows
+- bump toolchain and deps
+- *(deps)* bump thiserror from 2.0.12 to 2.0.15 in the actions group ([#38](https://github.com/Ravencentric/nzb-rs/pull/38))
+- *(deps)* bump serde_json in the actions group ([#37](https://github.com/Ravencentric/nzb-rs/pull/37))
+- *(deps)* bump rstest from 0.25.0 to 0.26.1 in the actions group ([#36](https://github.com/Ravencentric/nzb-rs/pull/36))
+- *(deps)* bump serde_json in the actions group ([#34](https://github.com/Ravencentric/nzb-rs/pull/34))
+
 ## [0.5.12](https://github.com/Ravencentric/nzb-rs/compare/v0.5.11...v0.5.12) - 2025-07-17
 
 ### Fixed
