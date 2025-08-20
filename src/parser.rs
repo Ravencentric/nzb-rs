@@ -167,6 +167,11 @@ pub(crate) fn parse_files(nzb: &Document) -> Result<Vec<File>, ParseNzbError> {
         return Err(ParseNzbError::FileElement);
     }
 
+    // There must be at least one non-`.par2` file.
+    if files.iter().all(|f| f.is_par2()) {
+        return Err(ParseNzbError::OnlyPar2Files);
+    }
+
     files.sort_by_key(|f| f.subject.clone());
 
     Ok(files)

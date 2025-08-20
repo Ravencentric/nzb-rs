@@ -281,3 +281,27 @@ fn test_file_with_missing_subject() {
             attribute: "subject".to_string()
         }))
 }
+
+#[test]
+fn test_nzb_with_only_par2_files() {
+    let nzb = r#"
+    <?xml version="1.0" encoding="UTF-8"?>
+    <!DOCTYPE nzb PUBLIC "-//newzBin//DTD NZB 1.1//EN" "http://www.newzbin.com/DTD/nzb/nzb-1.1.dtd">
+    <nzb xmlns="http://www.newzbin.com/DTD/2003/nzb">
+        <file poster="Joe Bloggs &lt;bloggs@nowhere.example&gt;" date="1590927494" subject="[1/1] - &quot;[Baz] Foobar - 09 (1080p) [0000BEEF].par2&quot; yEnc (1/1) 388">
+            <groups>
+                <group>alt.binaries.boneless</group>
+            </groups>
+            <segments>
+                <segment bytes="581" number="1">MtUwAvUsIaGzDhHhJgXsXaFv-1690927494721@nyuu</segment>
+            </segments>
+        </file>
+    </nzb>
+    "#
+    .trim();
+
+    let nzb = Nzb::parse(nzb);
+
+    assert!(nzb.is_err());
+    assert_eq!(nzb.unwrap_err(), ParseNzbError::OnlyPar2Files)
+}

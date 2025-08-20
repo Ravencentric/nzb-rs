@@ -4,26 +4,37 @@ use thiserror::Error;
 #[derive(Error, Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 /// Represents errors that can occur during the parsing of an NZB document.
 pub enum ParseNzbError {
-    /// Inidcates an invalid or missing 'groups' element within the 'file' element.
+    /// Indicates an invalid or missing 'groups' element within a 'file' element.
     /// Each 'file' element must contain at least one valid 'groups' element.
     #[error(
-        "Invalid or missing 'groups' element within the 'file' element. Each 'file' element must contain at least one valid 'groups' element."
+        "Invalid or missing 'groups' element within a 'file' element. \
+        Each 'file' element must contain at least one valid 'groups' element."
     )]
     GroupsElement,
 
-    /// Indicates an invalid or missing 'segments' element within the 'file' element.
+    /// Indicates an invalid or missing 'segments' element within a 'file' element.
     /// Each 'file' element must contain at least one valid 'segments' element.
     #[error(
-        "Invalid or missing 'segments' element within the 'file' element. Each 'file' element must contain at least one valid 'segments' element."
+        "Invalid or missing 'segments' element within a 'file' element. \
+        Each 'file' element must contain at least one valid 'segments' element."
     )]
     SegmentsElement,
 
     /// Indicates an invalid or missing 'file' element in the NZB document.
-    /// The NZB document must contain at least one valid 'file' element, and each 'file' must have at least one valid 'groups' and 'segments' element.
+    /// The NZB document must contain at least one valid 'file' element.
     #[error(
-        "Invalid or missing 'file' element in the NZB document. The NZB document must contain at least one valid 'file' element, and each 'file' must have at least one valid 'groups' and 'segments' element."
+        "Invalid or missing 'file' element in the NZB document. \
+        The NZB document must contain at least one valid 'file' element."
     )]
     FileElement,
+
+    /// Indicates that the NZB document contains only `.par2` files.
+    /// The NZB document must include at least one non-`.par2` file.
+    #[error(
+        "The NZB document contains only `.par2` files. \
+        It must include at least one non-`.par2` file."
+    )]
+    OnlyPar2Files,
 
     /// Indicates an invalid or missing required attribute in a 'file' element.
     #[error("Invalid or missing required attribute '{attribute}' in a 'file' element.")]
