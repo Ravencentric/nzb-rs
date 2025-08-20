@@ -18,3 +18,12 @@ updates:
       actions:
         patterns:
           - "*"
+
+  - package-ecosystem: "rust-toolchain"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    groups:
+      actions:
+        patterns:
+          - "*"
