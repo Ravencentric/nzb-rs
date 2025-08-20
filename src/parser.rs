@@ -1,5 +1,5 @@
 use crate::errors::ParseNzbError;
-use crate::{File, Meta, Segment};
+use crate::{File, Meta, Segment, subparsers};
 use chrono::DateTime;
 use lazy_regex::{regex, regex_captures_iter, regex_is_match};
 use roxmltree::Document;
@@ -172,7 +172,7 @@ pub(crate) fn parse_files(nzb: &Document) -> Result<Vec<File>, ParseNzbError> {
         return Err(ParseNzbError::OnlyPar2Files);
     }
 
-    files.sort_by_key(|f| f.subject.clone());
+    files.sort_by_key(|f| subparsers::sort_key_from_subject(&f.subject));
 
     Ok(files)
 }
