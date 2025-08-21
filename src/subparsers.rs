@@ -57,11 +57,11 @@ pub(crate) fn split_filename_at_extension(filename: &str) -> (&str, Option<&str>
     let re = regex!(r"(\.[a-z]\w{2,5})$"i);
 
     if let Some(found) = re.find(filename) {
-        let range = found.range();
         // +1 to skip the dot in the extension to match the behavior of `Path::extension()`,
         // which does not include the dot in the returned extension.
-        let extension = &filename[range.start + 1..];
-        let stem = &filename[..range.start];
+        let start = found.start();
+        let extension = &filename[start + 1..];
+        let stem = &filename[..start];
         (stem, Some(extension))
     } else {
         (filename, None)
