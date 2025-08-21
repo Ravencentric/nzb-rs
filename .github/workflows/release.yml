@@ -1,61 +1,61 @@
-name: Release-plz
-
-permissions:
-  pull-requests: write
-  contents: write
+name: Publish to crates.io
 
 on:
   push:
-    branches:
-      - main
-  workflow_dispatch:
+    tags:
+      - 'v[0-9]+.[0-9]+.[0-9]+'
+
+env:
+  CARGO_TERM_COLOR: always
+
+defaults:
+  run:
+    shell: bash
 
 jobs:
-
-  # Release unpublished packages.
-  release-plz-release:
-    name: Release-plz release
-    runs-on: ubuntu-latest
+  release:
+    environment: crates-io
     permissions:
       contents: write
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
-        with:
-          fetch-depth: 0
-          token: ${{ secrets.PAT }}
-      - name: Install Rust toolchain
-        uses: actions-rust-lang/setup-rust-toolchain@fb51252c7ba57d633bc668f941da052e410add48 # v1.13.0
-      - name: Run release-plz
-        uses: release-plz/action@f9715bc3b46e211f764f4440a221ddb89ae8abb3 # v0.5.112
-        with:
-          command: release
-        env:
-          GITHUB_TOKEN: ${{ secrets.PAT }}
-          CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
-
-  # Create a PR with the new versions and changelog, preparing the next release.
-  release-plz-pr:
-    name: Release-plz PR
+      id-token: write
+    name: Release ${{ github.ref_name }}
     runs-on: ubuntu-latest
-    permissions:
-      contents: write
-      pull-requests: write
-    concurrency:
-      group: release-plz-${{ github.ref }}
-      cancel-in-progress: false
     steps:
       - name: Checkout repository
-        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
-          fetch-depth: 0
-          token: ${{ secrets.PAT }}
+          fetch-depth: 0 # Required for changelog
+          persist-credentials: false
+
       - name: Install Rust toolchain
         uses: actions-rust-lang/setup-rust-toolchain@fb51252c7ba57d633bc668f941da052e410add48 # v1.13.0
-      - name: Run release-plz
-        uses: release-plz/action@f9715bc3b46e211f764f4440a221ddb89ae8abb3 # v0.5.112
-        with:
-          command: release-pr
+
+      - name: Lint
+        run: |
+          cargo clippy --all-features --all-targets --locked
+          cargo fmt --all --check
+
+      - uses: rust-lang/crates-io-auth-action@e919bc7605cde86df457cf5b93c5e103838bd879 # v1.0.1
+        id: auth
+
+      - name: Publish to crates.io
+        run: cargo publish --locked
         env:
-          GITHUB_TOKEN: ${{ secrets.PAT }}
-          CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+          CARGO_REGISTRY_TOKEN: ${{ steps.auth.outputs.token }}
+
+      - name: Generate a changelog
+        run: >-
+          pipx run git-cliff --config .github/cliff-template.toml
+          --github-repo "${GH_REPO}"
+          --github-token "${GH_TOKEN}"
+          --latest --strip header
+          --output "CHANGELOG.md"
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+
+      - name: Create Release
+        run: gh release create "${GH_REF_NAME}" -F "CHANGELOG.md" --fail-on-no-commits
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REF_NAME: ${{ github.ref_name }}
