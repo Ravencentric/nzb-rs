@@ -48,11 +48,31 @@ pub(crate) fn extract_filename_from_subject(subject: &str) -> Option<&str> {
     None
 }
 
+/// Splits a filename into a stem and an extension based on a specific pattern.
+/// `Path.extension()` has too many false positives, so we use a custom regex.
+///
+/// Returns a tuple containing the `(stem, Option<extension>)`.
+/// If no valid extension is found, the extension is `None`.
+pub(crate) fn split_filename_at_extension(filename: &str) -> (&str, Option<&str>) {
+    let re = regex!(r"(\.[a-z]\w{2,5})$"i);
+
+    if let Some(found) = re.find(filename) {
+        // +1 to skip the dot in the extension to match the behavior of `Path::extension()`,
+        // which does not include the dot in the returned extension.
+        let start = found.start();
+        let extension = &filename[start + 1..];
+        let stem = &filename[..start];
+        (stem, Some(extension))
+    } else {
+        (filename, None)
+    }
+}
+
 /// Returns a normalized subject string with "[1/10]" → "[01/10]" style zero-padding.
 /// If no match is found, returns the original string unchanged.
 pub(crate) fn sort_key_from_subject(subject: &str) -> String {
     let pattern = regex!(r"^\[(\d+)\/(\d+)\]");
-    if let Some((_, [current, total])) = pattern.captures(subject).map(|caps| caps.extract()) {
+    if let Some((_, [current, total])) = pattern.captures(subject).map(|caps| caps.extract::<2>()) {
         let width = total.len();
         let current = format!("{current:0>width$}");
         pattern.replace(subject, format!("[{current}/{total}]")).to_string()
@@ -70,18 +90,43 @@ mod tests {
     #[rstest]
     #[case(
         "[011/116] - [AC-FFF] Highschool DxD BorN - 02 [BD][1080p-Hi10p] FLAC][Dual-Audio][442E5446].mkv yEnc (1/2401) 1720916370",
-        "[AC-FFF] Highschool DxD BorN - 02 [BD][1080p-Hi10p] FLAC][Dual-Audio][442E5446].mkv"
+        "[AC-FFF] Highschool DxD BorN - 02 [BD][1080p-Hi10p] FLAC][Dual-Audio][442E5446].mkv",
+        "[AC-FFF] Highschool DxD BorN - 02 [BD][1080p-Hi10p] FLAC][Dual-Audio][442E5446]",
+        Some("mkv")
     )]
     #[case(
         "[010/108] - [SubsPlease] Ijiranaide, Nagatoro-san - 02 (1080p) [6E8E8065].mkv yEnc (1/2014) 1443366873",
-        "[SubsPlease] Ijiranaide, Nagatoro-san - 02 (1080p) [6E8E8065].mkv"
+        "[SubsPlease] Ijiranaide, Nagatoro-san - 02 (1080p) [6E8E8065].mkv",
+        "[SubsPlease] Ijiranaide, Nagatoro-san - 02 (1080p) [6E8E8065]",
+        Some("mkv")
     )]
     #[case(
-        r#"[1/8] - "TenPuru - No One Can Live on Loneliness v05 {+ "Book of Earthly Desires" pamphlet} (2021) (Digital) (KG Manga).cbz" yEnc (1/230) 164676947"#, 
-        r#"TenPuru - No One Can Live on Loneliness v05 {+ "Book of Earthly Desires" pamphlet} (2021) (Digital) (KG Manga).cbz"#
+            r#"[1/8] - "TenPuru - No One Can Live on Loneliness v05 {+ "Book of Earthly Desires" pamphlet} (2021) (Digital) (KG Manga).cbz" yEnc (1/230) 164676947"#,
+            r#"TenPuru - No One Can Live on Loneliness v05 {+ "Book of Earthly Desires" pamphlet} (2021) (Digital) (KG Manga).cbz"#,
+            r#"TenPuru - No One Can Live on Loneliness v05 {+ "Book of Earthly Desires" pamphlet} (2021) (Digital) (KG Manga)"#,
+            Some("cbz"),
     )]
-    fn test_extract_filename_from_subject(#[case] subject: &str, #[case] filename: &str) {
+    #[case(
+        r#"[1/10] - "ONE.PIECE.S01E1109.1080p.NF.WEB-DL.AAC2.0.H.264-VARYG" yEnc (1/1277) 915318101"#,
+        "ONE.PIECE.S01E1109.1080p.NF.WEB-DL.AAC2.0.H.264-VARYG",
+        "ONE.PIECE.S01E1109.1080p.NF.WEB-DL.AAC2.0.H.264-VARYG",
+        None
+    )]
+    #[case(
+        r#"[1/10] - "ONE.PIECE.S01E1109.1080p.NF.WEB-DL.AAC2.0.H.264-VARYG.mkv" yEnc (1/1277) 915318101"#,
+        "ONE.PIECE.S01E1109.1080p.NF.WEB-DL.AAC2.0.H.264-VARYG.mkv",
+        "ONE.PIECE.S01E1109.1080p.NF.WEB-DL.AAC2.0.H.264-VARYG",
+        Some("mkv")
+    )]
+    #[case(r#"[27/141] - "index.bdmv" yEnc (1/1) 280"#, "index.bdmv", "index", Some("bdmv"))]
+    fn test_name_stem_extension_extraction(
+        #[case] subject: &str,
+        #[case] filename: &str,
+        #[case] stem: &str,
+        #[case] extension: Option<&str>,
+    ) {
         assert_eq!(extract_filename_from_subject(subject), Some(filename));
+        assert_eq!(split_filename_at_extension(filename), (stem, extension));
     }
 
     #[test]

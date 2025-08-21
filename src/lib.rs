@@ -117,15 +117,19 @@ impl File {
     /// Base name of the file without it's extension extracted from the [`File::name`].
     /// May return [`None`] if it fails to extract the stem.
     pub fn stem(&self) -> Option<&str> {
-        self.name()
-            .and_then(|name| Path::new(name).file_stem().and_then(|f| f.to_str().map(|f| f.trim())))
+        self.name().map(|name| {
+            let (stem, _) = subparsers::split_filename_at_extension(name);
+            stem
+        })
     }
 
     ///  Extension of the file extracted from the [`File::name`].
     /// May return [`None`] if it fails to extract the extension.
     pub fn extension(&self) -> Option<&str> {
-        self.name()
-            .and_then(|name| Path::new(name).extension().and_then(|f| f.to_str().map(|f| f.trim())))
+        self.name().and_then(|name| {
+            let (_, ext) = subparsers::split_filename_at_extension(name);
+            ext
+        })
     }
 
     /// Return [`true`] if the file has the specified extension, [`false`] otherwise.
