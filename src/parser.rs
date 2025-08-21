@@ -111,14 +111,13 @@ pub(crate) fn parse_files(nzb: &Document) -> Result<Vec<File>, ParseNzbError> {
         let mut groups = Vec::new();
         let mut segments = Vec::new();
 
-        if let Some(groups_node) = node.descendants().find(|n| n.has_tag_name("groups")) {
-            for group in groups_node.descendants().filter(|n| n.has_tag_name("group")) {
-                let Some(group_text) = group.text() else {
-                    continue; // Skip this group if the text is missing.
-                };
-
-                groups.push(group_text.to_string());
-            }
+        if let Some(children) = node.descendants().find(|n| n.has_tag_name("groups")) {
+            groups.extend(
+                children
+                    .descendants()
+                    .filter(|n| n.has_tag_name("group"))
+                    .filter_map(|group| group.text().filter(|text| !text.is_empty()).map(String::from)),
+            );
         }
 
         // There must be at least one group.
@@ -126,22 +125,18 @@ pub(crate) fn parse_files(nzb: &Document) -> Result<Vec<File>, ParseNzbError> {
             return Err(ParseNzbError::GroupsElement);
         }
 
-        if let Some(segment_node) = node.descendants().find(|n| n.has_tag_name("segments")) {
-            for segment in segment_node.descendants().filter(|n| n.has_tag_name("segment")) {
-                let Some(size) = segment.attribute("bytes").and_then(|attr| attr.parse::<u32>().ok()) else {
-                    continue; // Skip this segment if the size is missing or malformed.
-                };
-
-                let Some(number) = segment.attribute("number").and_then(|attr| attr.parse::<u32>().ok()) else {
-                    continue; // Skip this segment if the number is missing or malformed.
-                };
-
-                let Some(message_id) = segment.text() else {
-                    continue; // Skip this segment if the message ID is missing.
-                };
-
-                segments.push(Segment::new(size, number, message_id));
-            }
+        if let Some(children) = node.descendants().find(|n| n.has_tag_name("segments")) {
+            segments.extend(
+                children
+                    .descendants()
+                    .filter(|n| n.has_tag_name("segment"))
+                    .filter_map(|segment| {
+                        let size = segment.attribute("bytes")?.parse::<u32>().ok()?;
+                        let number = segment.attribute("number")?.parse::<u32>().ok()?;
+                        let message_id = segment.text()?;
+                        Some(Segment::new(size, number, message_id.to_string()))
+                    }),
+            );
         }
 
         // There must be at least one segment.
