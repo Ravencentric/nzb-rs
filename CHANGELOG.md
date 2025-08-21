@@ -7,6 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.6.0](https://github.com/Ravencentric/nzb-rs/compare/v0.5.13...v0.6.0) - 2025-08-21
+
+### Fixed
+
+- use .start() instead of .range()
+- refactor stem and extension extractor
+- more robust extension and stem parser
+- implement a basic "natsort" for Nzb.files
+- ensure nzb has atleast one non-par2 file
+
+### Other
+
+- *(deps)* bump taiki-e/install-action in the actions group ([#40](https://github.com/Ravencentric/nzb-rs/pull/40))
+- *(deps)* bump the actions group with 2 updates ([#42](https://github.com/Ravencentric/nzb-rs/pull/42))
+- enable rust-toolchain updates in dependabot
+
 ## [0.5.13](https://github.com/Ravencentric/nzb-rs/compare/v0.5.12...v0.5.13) - 2025-08-18
 
 ### Fixed
