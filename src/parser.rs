@@ -1,4 +1,4 @@
-use crate::errors::ParseNzbError;
+use crate::errors::{FileAttributeKind, ParseNzbError};
 use crate::{File, Meta, Segment, subparsers};
 use chrono::DateTime;
 use lazy_regex::{regex, regex_captures_iter, regex_is_match};
@@ -90,21 +90,21 @@ pub(crate) fn parse_files(nzb: &Document) -> Result<Vec<File>, ParseNzbError> {
     for node in file_nodes {
         let poster = node
             .attribute("poster")
-            .ok_or_else(|| ParseNzbError::FileAttribute {
-                attribute: "poster".to_string(),
+            .ok_or(ParseNzbError::FileAttribute {
+                attribute: FileAttributeKind::Poster,
             })?
             .to_string();
         let posted_at = node
             .attribute("date")
             .and_then(|d| d.parse::<i64>().ok())
             .and_then(|d| DateTime::from_timestamp(d, 0))
-            .ok_or_else(|| ParseNzbError::FileAttribute {
-                attribute: "date".to_string(),
+            .ok_or(ParseNzbError::FileAttribute {
+                attribute: FileAttributeKind::Date,
             })?;
         let subject = node
             .attribute("subject")
-            .ok_or_else(|| ParseNzbError::FileAttribute {
-                attribute: "subject".to_string(),
+            .ok_or(ParseNzbError::FileAttribute {
+                attribute: FileAttributeKind::Subject,
             })?
             .to_string();
 

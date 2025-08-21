@@ -4,7 +4,7 @@ mod errors;
 mod parser;
 mod subparsers;
 
-pub use crate::errors::{ParseNzbError, ParseNzbFileError};
+pub use crate::errors::{FileAttributeKind, ParseNzbError, ParseNzbFileError};
 use crate::parser::{parse_files, parse_metadata, sabnzbd_is_obfuscated, sanitize_xml};
 use chrono::{DateTime, Utc};
 use flate2::read::GzDecoder;

@@ -1,4 +1,4 @@
-use nzb_rs::{Nzb, ParseNzbError, ParseNzbFileError};
+use nzb_rs::{FileAttributeKind, Nzb, ParseNzbError, ParseNzbFileError};
 use pretty_assertions::assert_eq;
 use std::io;
 use std::path::{Path, PathBuf};
@@ -211,15 +211,17 @@ fn test_file_with_missing_poster() {
     .trim();
 
     let nzb = Nzb::parse(no_poster);
-    assert!(nzb.is_err_and(|e| e
-        == ParseNzbError::FileAttribute {
-            attribute: "poster".to_string()
-        }))
+    assert_eq!(
+        nzb.unwrap_err(),
+        ParseNzbError::FileAttribute {
+            attribute: FileAttributeKind::Poster
+        }
+    );
 }
 
 #[test]
 fn test_file_with_bad_date() {
-    let no_poster = r#"
+    let bad_date = r#"
     <?xml version="1.0" encoding="iso-8859-1" ?>
     <!DOCTYPE nzb PUBLIC "-//newzBin//DTD NZB 1.1//EN" "http://www.newzbin.com/DTD/nzb/nzb-1.1.dtd">
     <nzb xmlns="http://www.newzbin.com/DTD/2003/nzb">
@@ -242,16 +244,18 @@ fn test_file_with_bad_date() {
     </nzb>
     "#.trim();
 
-    let nzb = Nzb::parse(no_poster);
-    assert!(nzb.is_err_and(|e| e
-        == ParseNzbError::FileAttribute {
-            attribute: "date".to_string()
-        }))
+    let nzb = Nzb::parse(bad_date);
+    assert_eq!(
+        nzb.unwrap_err(),
+        ParseNzbError::FileAttribute {
+            attribute: FileAttributeKind::Date
+        }
+    );
 }
 
 #[test]
 fn test_file_with_missing_subject() {
-    let no_poster = r#"
+    let no_subject = r#"
     <?xml version="1.0" encoding="iso-8859-1" ?>
     <!DOCTYPE nzb PUBLIC "-//newzBin//DTD NZB 1.1//EN" "http://www.newzbin.com/DTD/nzb/nzb-1.1.dtd">
     <nzb xmlns="http://www.newzbin.com/DTD/2003/nzb">
@@ -275,11 +279,13 @@ fn test_file_with_missing_subject() {
     "#
     .trim();
 
-    let nzb = Nzb::parse(no_poster);
-    assert!(nzb.is_err_and(|e| e
-        == ParseNzbError::FileAttribute {
-            attribute: "subject".to_string()
-        }))
+    let nzb = Nzb::parse(no_subject);
+    assert_eq!(
+        nzb.unwrap_err(),
+        ParseNzbError::FileAttribute {
+            attribute: FileAttributeKind::Subject
+        }
+    );
 }
 
 #[test]

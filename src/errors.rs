@@ -1,6 +1,24 @@
 use std::{io, path::PathBuf};
 use thiserror::Error;
 
+#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
+/// Represents the attributes that can be present in a 'file' element of an NZB document.
+pub enum FileAttributeKind {
+    Poster,
+    Date,
+    Subject,
+}
+
+impl std::fmt::Display for FileAttributeKind {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match *self {
+            Self::Poster => write!(f, "poster"),
+            Self::Date => write!(f, "date"),
+            Self::Subject => write!(f, "subject"),
+        }
+    }
+}
+
 #[derive(Error, Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 /// Represents errors that can occur during the parsing of an NZB document.
 pub enum ParseNzbError {
@@ -39,8 +57,8 @@ pub enum ParseNzbError {
     /// Indicates an invalid or missing required attribute in a 'file' element.
     #[error("Invalid or missing required attribute '{attribute}' in a 'file' element.")]
     FileAttribute {
-        /// The name of the attribute that was invalid or missing.
-        attribute: String,
+        /// The attribute that was invalid or missing.
+        attribute: FileAttributeKind,
     },
 
     /// Indicates that the NZB document is not valid XML and could not be parsed.
