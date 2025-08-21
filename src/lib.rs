@@ -276,12 +276,12 @@ impl Nzb {
     /// This is determined by finding the largest non `par2` file in the NZB
     /// and may not always be accurate.
     pub fn file(&self) -> &File {
-        // self.files is guranteed to have atleast one file, so we can safely unwrap().
+        // self.files is guaranteed to have at least one file, so we can safely unwrap().
         self.files
             .iter()
             .filter(|file| !file.is_par2())
             .max_by_key(|file| file.size())
-            .unwrap()
+            .expect("NZB should have at least one non-`.par2` file")
     }
 
     /// Total size of all the files in the NZB.
