@@ -157,11 +157,7 @@ impl File {
 
     /// Return [`true`] if the file is obfuscated, [`false`] otherwise.
     pub fn is_obfuscated(&self) -> bool {
-        if let Some(stem) = self.stem() {
-            return sabnzbd_is_obfuscated(stem);
-        }
-        // Definitely obfuscated if we can't even extract the stem.
-        true
+        self.stem().is_none_or(sabnzbd_is_obfuscated)
     }
 }
 
@@ -255,8 +251,7 @@ impl Nzb {
 
         let content = if file
             .extension()
-            .and_then(|f| f.to_str())
-            .is_some_and(|f| f.trim().eq_ignore_ascii_case("gz"))
+            .is_some_and(|f| f.eq_ignore_ascii_case("gz"))
         {
             let gzipped = fs::read(&file).map_err(|source| ParseNzbFileError::from_gzip_err(source, file.clone()))?;
             let mut decoder = GzDecoder::new(&gzipped[..]);
@@ -276,7 +271,7 @@ impl Nzb {
     /// This is determined by finding the largest non `par2` file in the NZB
     /// and may not always be accurate.
     pub fn file(&self) -> &File {
-        // self.files is guaranteed to have at least one file, so we can safely unwrap().
+        // self.files is guaranteed to have at least one file.
         self.files
             .iter()
             .filter(|file| !file.is_par2())
