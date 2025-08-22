@@ -137,7 +137,7 @@ impl File {
     /// This method ensures consistent extension comparison
     /// by normalizing the extension (removing any leading dot) and handling case-folding.
     pub fn has_extension(&self, ext: impl AsRef<str>) -> bool {
-        let ext = ext.as_ref().strip_prefix(".").unwrap_or_else(|| ext.as_ref()).trim();
+        let ext = ext.as_ref().trim().trim_start_matches('.');
         self.extension()
             .is_some_and(|file_ext| file_ext.eq_ignore_ascii_case(ext))
     }
