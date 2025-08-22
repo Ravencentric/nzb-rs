@@ -137,7 +137,7 @@ impl File {
     /// This method ensures consistent extension comparison
     /// by normalizing the extension (removing any leading dot) and handling case-folding.
     pub fn has_extension(&self, ext: impl AsRef<str>) -> bool {
-        let ext = ext.as_ref().trim().trim_start_matches('.');
+        let ext = ext.as_ref().strip_prefix('.').unwrap_or_else(|| ext.as_ref()).trim();
         self.extension()
             .is_some_and(|file_ext| file_ext.eq_ignore_ascii_case(ext))
     }
@@ -249,10 +249,7 @@ impl Nzb {
         let file =
             dunce::canonicalize(nzb.as_ref()).map_err(|source| ParseNzbFileError::from_io_err(source, nzb.as_ref()))?;
 
-        let content = if file
-            .extension()
-            .is_some_and(|f| f.eq_ignore_ascii_case("gz"))
-        {
+        let content = if file.extension().is_some_and(|f| f.eq_ignore_ascii_case("gz")) {
             let gzipped = fs::read(&file).map_err(|source| ParseNzbFileError::from_gzip_err(source, file.clone()))?;
             let mut decoder = GzDecoder::new(&gzipped[..]);
             let mut content = String::new();
