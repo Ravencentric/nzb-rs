@@ -163,7 +163,7 @@ pub(crate) fn parse_files(nzb: &Document) -> Result<Vec<File>, ParseNzbError> {
     }
 
     // There must be at least one non-`.par2` file.
-    if files.iter().all(|f| f.is_par2()) {
+    if files.iter().all(File::is_par2) {
         return Err(ParseNzbError::OnlyPar2Files);
     }
 
@@ -174,8 +174,8 @@ pub(crate) fn parse_files(nzb: &Document) -> Result<Vec<File>, ParseNzbError> {
 
 /// Return [`true`] if the file is obfuscated, [`false`] otherwise.
 ///
-/// This function is pretty much a straight port of the same from SABnzbd:
-/// https://github.com/sabnzbd/sabnzbd/blob/297455cd35c71962d39a36b7f99622f905d2234e/sabnzbd/deobfuscate_filenames.py#L104
+/// This function is pretty much a straight port of the same from `SABnzbd`:
+/// <https://github.com/sabnzbd/sabnzbd/blob/297455cd35c71962d39a36b7f99622f905d2234e/sabnzbd/deobfuscate_filenames.py#L104>
 ///
 /// The original accepts either a complete path or just the stem (basename) but
 /// this ONLY accepts the latter.
@@ -227,7 +227,7 @@ pub(crate) fn sabnzbd_is_obfuscated(filestem: &str) -> bool {
     }
 
     // Example: "Catullus", starts with a capital, and most letters are lower case
-    if filestem.chars().next().is_some_and(|c| c.is_uppercase())
+    if filestem.chars().next().is_some_and(char::is_uppercase)
         && lowerchars > 2
         && (upperchars as f64) / (lowerchars as f64) <= 0.25
     {

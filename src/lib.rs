@@ -104,18 +104,21 @@ impl File {
     }
 
     /// Size of the file calculated from the sum of segment sizes.
+    #[must_use]
     pub fn size(&self) -> u64 {
         self.segments.iter().map(|x| u64::from(x.size)).sum::<u64>()
     }
 
     /// Complete name of the file with it's extension extracted from the subject.
     /// May return [`None`] if it fails to extract the name.
+    #[must_use]
     pub fn name(&self) -> Option<&str> {
         subparsers::extract_filename_from_subject(&self.subject)
     }
 
     /// Base name of the file without it's extension extracted from the [`File::name`].
     /// May return [`None`] if it fails to extract the stem.
+    #[must_use]
     pub fn stem(&self) -> Option<&str> {
         self.name().map(|name| {
             let (stem, _) = subparsers::split_filename_at_extension(name);
@@ -125,6 +128,7 @@ impl File {
 
     ///  Extension of the file extracted from the [`File::name`].
     /// May return [`None`] if it fails to extract the extension.
+    #[must_use]
     pub fn extension(&self) -> Option<&str> {
         self.name().and_then(|name| {
             let (_, ext) = subparsers::split_filename_at_extension(name);
@@ -143,12 +147,14 @@ impl File {
     }
 
     /// Return [`true`] if the file is a `.par2` file, [`false`] otherwise.
+    #[must_use]
     pub fn is_par2(&self) -> bool {
         let re = regex!(r"\.par2$"i);
         self.name().is_some_and(|name| re.is_match(name))
     }
 
     /// Return [`true`] if the file is a `.rar` file, [`false`] otherwise.
+    #[must_use]
     pub fn is_rar(&self) -> bool {
         // https://github.com/sabnzbd/sabnzbd/blob/02b4a116dd4b46b2d2f33f7bbf249f2294458f2e/sabnzbd/nzbstuff.py#L107
         let re = regex!(r"(\.rar|\.r\d\d|\.s\d\d|\.t\d\d|\.u\d\d|\.v\d\d)$"i);
@@ -267,6 +273,7 @@ impl Nzb {
     /// The main content file (episode, movie, etc) in the NZB.
     /// This is determined by finding the largest non `par2` file in the NZB
     /// and may not always be accurate.
+    #[must_use]
     pub fn file(&self) -> &File {
         // self.files is guaranteed to have at least one file.
         self.files
@@ -277,36 +284,42 @@ impl Nzb {
     }
 
     /// Total size of all the files in the NZB.
+    #[must_use]
     pub fn size(&self) -> u64 {
-        self.files.iter().map(|file| file.size()).sum()
+        self.files.iter().map(File::size).sum()
     }
 
     /// Vector of unique file names across all the files in the NZB.
+    #[must_use]
     pub fn filenames(&self) -> Vec<&str> {
         self.files.iter().filter_map(|f| f.name()).unique().sorted().collect()
     }
 
     /// Vector of unique posters across all the files in the NZB.
+    #[must_use]
     pub fn posters(&self) -> Vec<&str> {
         self.files.iter().map(|f| f.poster.as_str()).unique().sorted().collect()
     }
 
     /// Vector of unique groups across all the files in the NZB.
+    #[must_use]
     pub fn groups(&self) -> Vec<&str> {
         self.files
             .iter()
-            .flat_map(|f| f.groups.iter().map(|f| f.as_str()))
+            .flat_map(|f| f.groups.iter().map(String::as_str))
             .unique()
             .sorted()
             .collect()
     }
 
     /// Vector of `.par2` files in the NZB.
+    #[must_use]
     pub fn par2_files(&self) -> Vec<&File> {
         self.files.iter().filter(|f| f.is_par2()).collect()
     }
 
     /// Total size of all the `.par2` files.
+    #[must_use]
     pub fn par2_size(&self) -> u64 {
         self.files
             .iter()
@@ -315,6 +328,7 @@ impl Nzb {
     }
 
     /// Percentage of the size of all the `.par2` files relative to the total size.
+    #[must_use]
     pub fn par2_percentage(&self) -> f64 {
         (self.par2_size() as f64 / self.size() as f64) * 100.0
     }
@@ -328,22 +342,26 @@ impl Nzb {
     }
 
     /// Return [`true`] if there's at least one `.par2` file in the NZB, [`false`] otherwise.
+    #[must_use]
     pub fn has_par2(&self) -> bool {
-        self.files.iter().any(|file| file.is_par2())
+        self.files.iter().any(File::is_par2)
     }
 
     /// Return [`true`] if any file in the NZB is a `.rar` file, [`false`] otherwise.
+    #[must_use]
     pub fn has_rar(&self) -> bool {
-        self.files.iter().any(|file| file.is_rar())
+        self.files.iter().any(File::is_rar)
     }
 
     /// Return [`true`] if every file in the NZB is a `.rar` file, [`false`] otherwise.
+    #[must_use]
     pub fn is_rar(&self) -> bool {
-        self.files.iter().all(|file| file.is_rar())
+        self.files.iter().all(File::is_rar)
     }
 
     /// Return [`true`] if any file in the NZB is obfuscated, [`false`] otherwise.
+    #[must_use]
     pub fn is_obfuscated(&self) -> bool {
-        self.files.iter().any(|file| file.is_obfuscated())
+        self.files.iter().any(File::is_obfuscated)
     }
 }
