@@ -6,7 +6,7 @@ use rstest::rstest;
 use std::path::PathBuf;
 
 fn get_file(name: &str) -> PathBuf {
-    dunce::canonicalize(file!())
+    std::fs::canonicalize(file!())
         .unwrap()
         .parent()
         .unwrap()

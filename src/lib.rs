@@ -252,19 +252,18 @@ impl Nzb {
     /// }
     /// ```
     pub fn parse_file(nzb: impl AsRef<Path>) -> Result<Self, ParseNzbFileError> {
-        let file =
-            dunce::canonicalize(nzb.as_ref()).map_err(|source| ParseNzbFileError::from_io_err(source, nzb.as_ref()))?;
+        let file = nzb.as_ref();
 
         let content = if file.extension().is_some_and(|f| f.eq_ignore_ascii_case("gz")) {
-            let gzipped = fs::read(&file).map_err(|source| ParseNzbFileError::from_gzip_err(source, file.clone()))?;
+            let gzipped = fs::read(file).map_err(|source| ParseNzbFileError::from_gzip_err(source, file))?;
             let mut decoder = GzDecoder::new(&gzipped[..]);
-            let mut content = String::new();
+            let mut content = String::with_capacity(gzipped.len());
             decoder
                 .read_to_string(&mut content)
                 .map_err(|source| ParseNzbFileError::from_gzip_err(source, file))?;
             content
         } else {
-            fs::read_to_string(&file).map_err(|source| ParseNzbFileError::from_io_err(source, file.clone()))?
+            fs::read_to_string(file).map_err(|source| ParseNzbFileError::from_io_err(source, file))?
         };
 
         Ok(Self::parse(content)?)
