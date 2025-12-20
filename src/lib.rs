@@ -9,8 +9,6 @@ use crate::parser::{parse_files, parse_metadata, sabnzbd_is_obfuscated, sanitize
 use chrono::{DateTime, Utc};
 use flate2::read::GzDecoder;
 use itertools::Itertools;
-use lazy_regex::regex;
-use roxmltree::Document;
 use std::fs;
 use std::io::Read;
 use std::path::Path;
@@ -149,16 +147,61 @@ impl File {
     /// Return [`true`] if the file is a `.par2` file, [`false`] otherwise.
     #[must_use]
     pub fn is_par2(&self) -> bool {
-        let re = regex!(r"\.par2$"i);
-        self.name().is_some_and(|name| re.is_match(name))
+        self.name()
+            // Because the `.par2` extension is 5 ASCII characters long, we can
+            // work on the byte level for minor performance gains.
+            .map(str::as_bytes)
+            .is_some_and(|name| name.len() >= 5 && name[name.len() - 5..].eq_ignore_ascii_case(b".par2"))
     }
 
     /// Return [`true`] if the file is a `.rar` file, [`false`] otherwise.
     #[must_use]
     pub fn is_rar(&self) -> bool {
-        // https://github.com/sabnzbd/sabnzbd/blob/02b4a116dd4b46b2d2f33f7bbf249f2294458f2e/sabnzbd/nzbstuff.py#L107
-        let re = regex!(r"(\.rar|\.r\d\d|\.s\d\d|\.t\d\d|\.u\d\d|\.v\d\d)$"i);
-        self.name().is_some_and(|name| re.is_match(name))
+        // This is a reimplementation of the RAR file check used in SABnzbd:
+        // https://github.com/sabnzbd/sabnzbd/blob/11ba9ae12ade8c8f2abb42d44ea35efdd361fae5/sabnzbd/nzbstuff.py#L107
+        //
+        // The logic is functionally equivalent, but instead of using regular
+        // expressions, this version relies on direct byte comparisons for better
+        // performance and tries to avoid unnecessary allocations.
+        self.name()
+            // Recognized RAR-related extensions (case-insensitive):
+            //
+            //  - .rar
+            //  - .r00, .r01, .r02, ...
+            //  - .s00, .s01, .s02, ...
+            //  - .t00, .t01, .t02, ...
+            //  - .u00, .u01, .u02, ...
+            //  - .v00, .v01, .v02, ...
+            //
+            // Because all of these extensions are 4 ASCII characters long, we can
+            // work on the byte level for minor performance gains.
+            .map(str::as_bytes)
+            .is_some_and(|name| {
+                const SUFFIX_LEN: usize = 4;
+
+                if name.len() < SUFFIX_LEN {
+                    return false;
+                }
+
+                // Get the last 4 bytes of the filename
+                let suffix = &name[name.len() - SUFFIX_LEN..];
+
+                // Fast path for ".rar"
+                if suffix.eq_ignore_ascii_case(b".rar") {
+                    return true;
+                };
+
+                // Match multi-part RAR volume extensions (".xNN")
+                matches!(
+                    suffix,
+                    [
+                        b'.',                                                                // dot
+                        b'r' | b'R' | b's' | b'S' | b't' | b'T' | b'u' | b'U' | b'v' | b'V', // r, s, t, u, v (case-insensitive)
+                        b'0'..=b'9',                                                         // digit
+                        b'0'..=b'9'                                                          // digit
+                    ]
+                )
+            })
     }
 
     /// Return [`true`] if the file is obfuscated, [`false`] otherwise.
@@ -182,7 +225,7 @@ impl FromStr for Nzb {
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         let xml = sanitize_xml(s);
-        let nzb = Document::parse(xml)?;
+        let nzb = roxmltree::Document::parse(xml)?;
         let meta = parse_metadata(&nzb);
         let files = parse_files(&nzb)?;
         Ok(Self { meta, files })

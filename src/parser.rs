@@ -1,19 +1,21 @@
 use crate::errors::{FileAttributeKind, ParseNzbError};
 use crate::{File, Meta, Segment, subparsers};
 use chrono::DateTime;
-use lazy_regex::{regex, regex_captures_iter, regex_is_match};
+use regex::Regex;
 use roxmltree::Document;
+use std::sync::LazyLock;
 
 pub(crate) fn sanitize_xml(xml: &str) -> &str {
     // roxmltree doesn't support XML declarations or DOCTYPEs, so we need to remove them.
-    let xml_heading_re = regex!(r"^(?i)<\?xml\s+version.*?\?>");
-    let xml_doctype_re = regex!(r"^(?i)<!DOCTYPE.*?>");
+    static XML_HEADING_RE: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"^(?i)<\?xml\s+version.*?\?>").unwrap());
+    static XML_DOCTYPE_RE: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"^(?i)<!DOCTYPE.*?>").unwrap());
+
     let mut content = xml.trim();
-    if let Some(found) = xml_heading_re.find(content) {
+    if let Some(found) = XML_HEADING_RE.find(content) {
         content = &content[found.end()..];
         content = content.trim_start();
     }
-    if let Some(found) = xml_doctype_re.find(content) {
+    if let Some(found) = XML_DOCTYPE_RE.find(content) {
         content = &content[found.end()..];
         content = content.trim_start();
     }
@@ -134,7 +136,7 @@ pub(crate) fn parse_files(nzb: &Document) -> Result<Vec<File>, ParseNzbError> {
                         let size = segment.attribute("bytes")?.parse::<u32>().ok()?;
                         let number = segment.attribute("number")?.parse::<u32>().ok()?;
                         let message_id = segment.text()?;
-                        Some(Segment::new(size, number, message_id.to_string()))
+                        Some(Segment::new(size, number, message_id))
                     }),
             );
         }
@@ -180,36 +182,60 @@ pub(crate) fn parse_files(nzb: &Document) -> Result<Vec<File>, ParseNzbError> {
 /// The original accepts either a complete path or just the stem (basename) but
 /// this ONLY accepts the latter.
 pub(crate) fn sabnzbd_is_obfuscated(filestem: &str) -> bool {
-    // First: the patterns that are certainly obfuscated:
+    // In a lot of cases, we do not care about anything other than ASCII characters.
+    // So, we can work on the byte level for minor performance gains.
+    let filestem_bytes = filestem.as_bytes();
+    let length = filestem_bytes.len();
 
+    // First, the patterns that are certainly obfuscated:
+
+    // 32-character hex strings, e.g.
     // ...blabla.H.264/b082fa0beaa644d3aa01045d5b8d0b36.mkv is certainly obfuscated
-    if regex_is_match!(r"^[a-f0-9]{32}$", filestem) {
+    if length == 32 && filestem_bytes.iter().all(|b| b.is_ascii_hexdigit()) {
         return true;
     }
 
+    // 40+ chars consisting only of hex digits and dots, e.g.
     // 0675e29e9abfd2.f7d069dab0b853283cc1b069a25f82.6547
-    if regex_is_match!(r"^[a-f0-9.]{40,}$", filestem) {
+    if length >= 40 && filestem_bytes.iter().all(|b| b.is_ascii_hexdigit() || *b == b'.') {
         return true;
     }
 
     // "[BlaBla] something [More] something 5937bc5e32146e.bef89a622e4a23f07b0d3757ad5e8a.a02b264e [Brrr]"
     // So: square brackets plus 30+ hex digit
-    if regex_is_match!(r"[a-f0-9]{30}", filestem) && regex_captures_iter!(r"\[\w+\]", filestem).count() >= 2 {
+    static HEX_DIGITS: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"[a-f0-9]{30}").unwrap());
+    static WORDS_IN_SQUARE_BRACKETS: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"\[\w+\]").unwrap());
+    if HEX_DIGITS.is_match(filestem) && WORDS_IN_SQUARE_BRACKETS.captures_iter(filestem).count() >= 2 {
         return true;
     }
 
     // /some/thing/abc.xyz.a4c567edbcbf27.BLA is certainly obfuscated
-    if regex_is_match!(r"^abc\.xyz", filestem) {
+    if filestem_bytes.starts_with(b"abc.xyz") {
         return true;
     }
 
-    // Then: patterns that are not obfuscated but typical, clear names:
+    // Then, patterns that are not obfuscated but typical, clear names:
 
     // these are signals for the obfuscation versus non-obfuscation
-    let decimals = filestem.chars().filter(|c| c.is_numeric()).count();
-    let upperchars = filestem.chars().filter(|c| c.is_uppercase()).count();
-    let lowerchars = filestem.chars().filter(|c| c.is_lowercase()).count();
-    let spacesdots = filestem.chars().filter(|&c| c == ' ' || c == '.' || c == '_').count();
+    let mut decimals: u32 = 0;
+    let mut upperchars: u32 = 0;
+    let mut lowerchars: u32 = 0;
+    let mut spacesdots: u32 = 0;
+
+    for char in filestem.chars() {
+        if char.is_ascii_digit() {
+            decimals += 1;
+        }
+        if char.is_uppercase() {
+            upperchars += 1;
+        }
+        if char.is_lowercase() {
+            lowerchars += 1;
+        }
+        if char == ' ' || char == '.' || char == '_' {
+            spacesdots += 1;
+        }
+    }
 
     // Example: "Great Distro"
     if upperchars >= 2 && lowerchars >= 2 && spacesdots >= 1 {
@@ -240,71 +266,59 @@ pub(crate) fn sabnzbd_is_obfuscated(filestem: &str) -> bool {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use rstest::rstest;
     use std::path::Path;
 
-    fn get_stem(p: &str) -> &str {
-        Path::new(p).file_stem().and_then(|f| f.to_str()).unwrap()
+    // Test cases copied from SABnzbd’s filename deobfuscation tests.
+    // Thanks to the SABnzbd project for these examples.
+    //
+    // The original tests are split here into two functions
+    // (test_sabnzbd_is_obfuscated_true / test_sabnzbd_is_obfuscated_false) for convenience.
+    //
+    // Source:
+    // https://github.com/sabnzbd/sabnzbd/blob/11ba9ae12ade8c8f2abb42d44ea35efdd361fae5/tests/test_deobfuscate_filenames.py#L43
+    #[rstest]
+    #[case("599c1c9e2bdfb5114044bf25152b7eaa.mkv")]
+    #[case("/my/blabla/directory/stuff/599c1c9e2bdfb5114044bf25152b7eaa.mkv")]
+    #[case("/my/blabla/directory/A Directory Should Not Count 2020/599c1c9e2bdfb5114044bf25152b7eaa.mkv")]
+    #[case("/my/blabla/directory/stuff/afgm.avi")]
+    #[case("/my/blabla/directory/stuff/afgm2020.avi")]
+    #[case("MUGNjK3zi65TtN.mkv")]
+    #[case("T306077.avi")]
+    #[case("bar10nmbkkjjdfr.mkv")]
+    #[case("4rFF-fdtd480p.bin")]
+    #[case("e0nFmxBNTprpbQiVQ44WeEwSrBkLlJ7IgaSj3uzFu455FVYG3q.bin")]
+    #[case("e0nFmxBNTprpbQiVQ44WeEwSrBkLlJ7IgaSj3uzFu455FVYG3q")] // no ext
+    #[case("greatdistro.iso")]
+    #[case("my.download.2020")]
+    #[case("abc.xyz.a4c567edbcbf27.BLA")] // by definition
+    #[case("abc.xyz.iso")] // lazy brother
+    #[case("0675e29e9abfd2.f7d069dab0b853283cc1b069a25f82.6547")]
+    #[case("[BlaBla] something [More] something b2.bef89a622e4a23f07b0d3757ad5e8a.a0 [Brrr]")]
+    fn test_sabnzbd_is_obfuscated_true(#[case] filename: &str) {
+        let filestem = Path::new(filename).file_stem().and_then(|f| f.to_str()).unwrap();
+        assert!(sabnzbd_is_obfuscated(filestem));
     }
 
-    /// https://github.com/sabnzbd/sabnzbd/blob/42c00dda8455c82d691615259775a30661a752bd/tests/test_deobfuscate_filenames.py#L43
-    #[test]
-    fn test_sabnzbd_is_obfuscated() {
-        assert!(sabnzbd_is_obfuscated(get_stem("599c1c9e2bdfb5114044bf25152b7eaa.mkv")));
-        assert!(sabnzbd_is_obfuscated(get_stem(
-            "/my/blabla/directory/stuff/599c1c9e2bdfb5114044bf25152b7eaa.mkv"
-        )));
-        assert!(sabnzbd_is_obfuscated(get_stem(
-            "/my/blabla/directory/A Directory Should Not Count 2020/599c1c9e2bdfb5114044bf25152b7eaa.mkv"
-        )));
-        assert!(sabnzbd_is_obfuscated(get_stem("/my/blabla/directory/stuff/afgm.avi")));
-        assert!(sabnzbd_is_obfuscated(get_stem(
-            "/my/blabla/directory/stuff/afgm2020.avi"
-        )));
-        assert!(sabnzbd_is_obfuscated(get_stem("MUGNjK3zi65TtN.mkv")));
-        assert!(sabnzbd_is_obfuscated(get_stem("T306077.avi")));
-        assert!(sabnzbd_is_obfuscated(get_stem("bar10nmbkkjjdfr.mkv")));
-        assert!(sabnzbd_is_obfuscated(get_stem("4rFF-fdtd480p.bin")));
-        assert!(sabnzbd_is_obfuscated(get_stem(
-            "e0nFmxBNTprpbQiVQ44WeEwSrBkLlJ7IgaSj3uzFu455FVYG3q.bin"
-        )));
-        assert!(sabnzbd_is_obfuscated(get_stem(
-            "e0nFmxBNTprpbQiVQ44WeEwSrBkLlJ7IgaSj3uzFu455FVYG3q"
-        ))); // no ext
-        assert!(sabnzbd_is_obfuscated(get_stem("greatdistro.iso")));
-        assert!(sabnzbd_is_obfuscated(get_stem("my.download.2020")));
-        assert!(sabnzbd_is_obfuscated(get_stem("abc.xyz.a4c567edbcbf27.BLA")));
-        assert!(sabnzbd_is_obfuscated(get_stem("abc.xyz.iso")));
-        assert!(sabnzbd_is_obfuscated(get_stem(
-            "0675e29e9abfd2.f7d069dab0b853283cc1b069a25f82.6547"
-        )));
-        assert!(sabnzbd_is_obfuscated(get_stem(
-            "[BlaBla] something [More] something b2.bef89a622e4a23f07b0d3757ad5e8a.a0 [Brrr]"
-        )));
-
-        // non-obfuscated names:
-        assert!(!sabnzbd_is_obfuscated(get_stem(
-            "/my/blabla/directory/stuff/My Favorite Distro S03E04.iso"
-        )));
-        assert!(!sabnzbd_is_obfuscated(get_stem(
-            "/my/blabla/directory/stuff/Great Distro (2020).iso"
-        )));
-        assert!(!sabnzbd_is_obfuscated(get_stem("ubuntu.2004.iso")));
-        assert!(!sabnzbd_is_obfuscated(get_stem(
-            "/my/blabla/directory/stuff/GreatDistro2020.iso"
-        )));
-        assert!(!sabnzbd_is_obfuscated(get_stem("Catullus.avi")));
-        assert!(!sabnzbd_is_obfuscated(get_stem("Der.Mechaniker.HDRip.XviD-SG.avi")));
-        assert!(!sabnzbd_is_obfuscated(get_stem(
-            "Bonjour.1969.FRENCH.BRRiP.XviD.AC3-HuSh.avi"
-        )));
-        assert!(!sabnzbd_is_obfuscated(get_stem("Bonjour.1969.avi")));
-        assert!(!sabnzbd_is_obfuscated(get_stem("This That S01E11")));
-        assert!(!sabnzbd_is_obfuscated(get_stem("This_That_S01E11")));
-        assert!(!sabnzbd_is_obfuscated(get_stem("this_that_S01E11")));
-        assert!(!sabnzbd_is_obfuscated(get_stem("My.Download.2020")));
-        assert!(!sabnzbd_is_obfuscated(get_stem("this_that_there_here.avi")));
-        assert!(!sabnzbd_is_obfuscated(get_stem("Lorem Ipsum.avi")));
-        assert!(!sabnzbd_is_obfuscated(get_stem("Lorem Ipsum"))); // no ext
+    #[rstest]
+    #[case("/my/blabla/directory/stuff/My Favorite Distro S03E04.iso")]
+    #[case("/my/blabla/directory/stuff/Great Distro (2020).iso")]
+    #[case("ubuntu.2004.iso")]
+    #[case("/my/blabla/directory/stuff/GreatDistro2020.iso")]
+    #[case("Catullus.avi")]
+    #[case("Der.Mechaniker.HDRip.XviD-SG.avi")]
+    #[case("Bonjour.1969.FRENCH.BRRiP.XviD.AC3-HuSh.avi")]
+    #[case("Bonjour.1969.avi")]
+    #[case("This That S01E11")]
+    #[case("This_That_S01E11")]
+    #[case("this_that_S01E11")]
+    #[case("My.Download.2020")]
+    #[case("this_that_there_here.avi")]
+    #[case("Lorem Ipsum.avi")]
+    #[case("Lorem Ipsum")] // no ext
+    fn test_sabnzbd_is_obfuscated_false(#[case] filename: &str) {
+        let filestem = Path::new(filename).file_stem().and_then(|f| f.to_str()).unwrap();
+        assert!(!sabnzbd_is_obfuscated(filestem));
     }
 
     #[test]
