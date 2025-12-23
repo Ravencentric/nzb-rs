@@ -68,17 +68,24 @@ pub(crate) fn split_filename_at_extension(filename: &str) -> (&str, Option<&str>
     }
 }
 
-/// Returns a normalized subject string with "[1/10]" → "[01/10]" style zero-padding.
-/// If no match is found, returns the original string unchanged.
-pub(crate) fn sort_key_from_subject(subject: &str) -> String {
-    let pattern = regex!(r"^\[(\d+)\/(\d+)\]");
-    if let Some((_, [current, total])) = pattern.captures(subject).map(|caps| caps.extract::<2>()) {
-        let width = total.len();
-        let current = format!("{current:0>width$}");
-        pattern.replace(subject, format!("[{current}/{total}]")).to_string()
-    } else {
-        subject.to_string()
-    }
+/// Extracts a numeric prefix from subjects formatted like "[N/...]".
+///
+/// This is used to avoid lexicographic sorting errors when numbers are not
+/// zero-padded (e.g. "[1/...]", "[11/...]", "[2/...]").
+///
+/// Not all subjects include the "[N/...]" pattern, so the original subject is
+/// always returned unchanged and the numeric key may be absent.
+///
+/// # Example
+/// Input: "[27/141] - "index.bdmv" yEnc (1/1) 280"
+/// Output: (Some(27), "[27/141] - "index.bdmv" yEnc (1/1) 280")
+pub(crate) fn sort_key_from_subject(subject: &str) -> (Option<i32>, &str) {
+    let num = subject
+        .strip_prefix('[')
+        .and_then(|s| s.split_once('/'))
+        .and_then(|(digits, _)| digits.parse().ok());
+
+    (num, subject)
 }
 
 #[cfg(test)]
@@ -133,12 +140,17 @@ mod tests {
     fn test_sort_key_from_subject() {
         assert_eq!(
             sort_key_from_subject(r#"[10/141] - "00010.clpi" yEnc (1/1) 1000"#),
-            r#"[010/141] - "00010.clpi" yEnc (1/1) 1000"#
+            (Some(10), r#"[10/141] - "00010.clpi" yEnc (1/1) 1000"#)
         );
 
         assert_eq!(
             sort_key_from_subject(r#""00010.clpi" yEnc (1/1) 1000"#),
-            r#""00010.clpi" yEnc (1/1) 1000"#
+            (None, r#""00010.clpi" yEnc (1/1) 1000"#)
+        );
+
+        assert_eq!(
+            sort_key_from_subject("Here's your file!  abc-mr2a.r01 (1/2)"),
+            (None, "Here's your file!  abc-mr2a.r01 (1/2)")
         );
 
         let control = vec![
@@ -220,10 +232,14 @@ mod tests {
         let mut rng = rand::rng();
         randomized.shuffle(&mut rng);
 
-        let mut sorted = randomized.clone();
-        sorted.sort_by_key(|s| sort_key_from_subject(s));
+        let mut sorted_by = randomized.clone();
+        let mut sorted_by_key = randomized.clone();
+        sorted_by.sort_by(|a, b| sort_key_from_subject(a).cmp(&sort_key_from_subject(b)));
+        sorted_by_key.sort_by_key(|s| sort_key_from_subject(s));
 
         assert_ne!(randomized, control);
-        assert_eq!(sorted, control);
+        assert_eq!(sorted_by, control);
+        assert_eq!(sorted_by_key, control);
+        assert_eq!(sorted_by, sorted_by_key);
     }
 }

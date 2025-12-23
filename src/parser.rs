@@ -169,7 +169,9 @@ pub(crate) fn parse_files(nzb: &Document) -> Result<Vec<File>, ParseNzbError> {
         return Err(ParseNzbError::OnlyPar2Files);
     }
 
-    files.sort_by_key(|f| subparsers::sort_key_from_subject(&f.subject));
+    files.sort_by(|a, b| {
+        subparsers::sort_key_from_subject(&a.subject).cmp(&subparsers::sort_key_from_subject(&b.subject))
+    });
 
     Ok(files)
 }
