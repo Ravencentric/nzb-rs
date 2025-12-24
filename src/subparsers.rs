@@ -79,7 +79,7 @@ pub(crate) fn split_filename_at_extension(filename: &str) -> (&str, Option<&str>
 /// # Example
 /// Input: "[27/141] - "index.bdmv" yEnc (1/1) 280"
 /// Output: (Some(27), "[27/141] - "index.bdmv" yEnc (1/1) 280")
-pub(crate) fn sort_key_from_subject(subject: &str) -> (Option<i32>, &str) {
+pub(crate) fn sort_key_from_subject(subject: &str) -> (Option<u32>, &str) {
     let num = subject
         .strip_prefix('[')
         .and_then(|s| s.split_once('/'))
