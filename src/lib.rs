@@ -6,6 +6,7 @@ mod subparsers;
 
 pub use crate::errors::{FileAttributeKind, ParseNzbError, ParseNzbFileError};
 use crate::parser::{parse_files, parse_metadata, sabnzbd_is_obfuscated, sanitize_xml};
+use crate::subparsers::{extract_filename_from_subject, file_extension};
 use chrono::{DateTime, Utc};
 use flate2::read::GzDecoder;
 use itertools::Itertools;
@@ -111,27 +112,31 @@ impl File {
     /// May return [`None`] if it fails to extract the name.
     #[must_use]
     pub fn name(&self) -> Option<&str> {
-        subparsers::extract_filename_from_subject(&self.subject)
+        extract_filename_from_subject(&self.subject)
     }
 
     /// Base name of the file without it's extension extracted from the [`File::name`].
     /// May return [`None`] if it fails to extract the stem.
     #[must_use]
     pub fn stem(&self) -> Option<&str> {
-        self.name().map(|name| {
-            let (stem, _) = subparsers::split_filename_at_extension(name);
-            stem
-        })
+        let name = self.name()?;
+        match file_extension(name) {
+            // SAFETY:
+            // `file_extension` delegates to `Path::extension`,
+            // which guarantees `ext` comes after a final `.` that is not
+            // the first character. This ensures the file name ends with `.<ext>`,
+            // so subtracting `ext.len()` and `1` (for the dot) yields a
+            // valid slice for the stem.
+            Some(ext) => Some(&name[..name.len() - ext.len() - 1]),
+            None => Some(name),
+        }
     }
 
     ///  Extension of the file extracted from the [`File::name`].
     /// May return [`None`] if it fails to extract the extension.
     #[must_use]
     pub fn extension(&self) -> Option<&str> {
-        self.name().and_then(|name| {
-            let (_, ext) = subparsers::split_filename_at_extension(name);
-            ext
-        })
+        self.name().and_then(file_extension)
     }
 
     /// Return [`true`] if the file has the specified extension, [`false`] otherwise.

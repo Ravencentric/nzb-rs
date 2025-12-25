@@ -1,4 +1,5 @@
 use lazy_regex::regex;
+use std::path::Path;
 
 /// Extract the complete name of the file with it's extension from the subject.
 /// May return `None` if it fails to extract the name.
@@ -48,24 +49,27 @@ pub(crate) fn extract_filename_from_subject(subject: &str) -> Option<&str> {
     None
 }
 
-/// Splits a filename into a stem and an extension based on a specific pattern.
-/// `Path.extension()` has too many false positives, so we use a custom regex.
+/// Returns the file extension, if any.
 ///
-/// Returns a tuple containing the `(stem, Option<extension>)`.
-/// If no valid extension is found, the extension is `None`.
-pub(crate) fn split_filename_at_extension(filename: &str) -> (&str, Option<&str>) {
-    let re = regex!(r"(\.[a-z]\w{2,5})$"i);
+/// This is a small wrapper around [`Path::extension`] that *attempts* to filter
+/// out common false positives found in P2P and obfuscated file or folder names
+/// (where dots are often used without indicating an actual extension).
+///
+/// The returned extension does not include the leading dot.
+pub(crate) fn file_extension(name: &str) -> Option<&str> {
+    let ext = Path::new(name).extension()?.to_str()?;
 
-    if let Some(found) = re.find(filename) {
-        // +1 to skip the dot in the extension to match the behavior of `Path::extension()`,
-        // which does not include the dot in the returned extension.
-        let start = found.start();
-        let extension = &filename[start + 1..];
-        let stem = &filename[..start];
-        (stem, Some(extension))
-    } else {
-        (filename, None)
+    const COMMON_EXTENSION_MAX_LEN: usize = 8;
+
+    if ext.len() >= COMMON_EXTENSION_MAX_LEN {
+        return None;
     }
+
+    if !ext.as_bytes().iter().all(u8::is_ascii_alphanumeric) {
+        return None;
+    }
+
+    Some(ext)
 }
 
 /// Extracts a numeric prefix from subjects formatted like "[N/...]".
@@ -132,8 +136,13 @@ mod tests {
         #[case] stem: &str,
         #[case] extension: Option<&str>,
     ) {
+        fn stem_from_name(name: &str) -> &str {
+            file_extension(name).map_or(name, |ext| &name[..name.len() - ext.len() - 1])
+        }
+
         assert_eq!(extract_filename_from_subject(subject), Some(filename));
-        assert_eq!(split_filename_at_extension(filename), (stem, extension));
+        assert_eq!(stem_from_name(filename), stem);
+        assert_eq!(file_extension(filename), extension);
     }
 
     #[test]
