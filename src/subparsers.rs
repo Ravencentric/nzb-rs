@@ -72,6 +72,19 @@ pub(crate) fn file_extension(name: &str) -> Option<&str> {
     Some(ext)
 }
 
+/// Returns the file stem (the name without its extension).
+///
+/// If no extension is detected, the entire `name` is returned as the stem.
+pub(crate) fn file_stem(name: &str) -> &str {
+    file_extension(name).map_or(name, |ext| {
+        // SAFETY:
+        // [`file_extension`] relies on [`Path::extension`], which guarantees `ext`
+        // comes after a final `.` that is not the first character. Therefore,
+        // slicing off `.<ext>` always produces a valid subslice.
+        &name[..name.len() - ext.len() - 1]
+    })
+}
+
 /// Extracts a numeric prefix from subjects formatted like "[N/...]".
 ///
 /// This is used to avoid lexicographic sorting errors when numbers are not
@@ -136,12 +149,8 @@ mod tests {
         #[case] stem: &str,
         #[case] extension: Option<&str>,
     ) {
-        fn stem_from_name(name: &str) -> &str {
-            file_extension(name).map_or(name, |ext| &name[..name.len() - ext.len() - 1])
-        }
-
         assert_eq!(extract_filename_from_subject(subject), Some(filename));
-        assert_eq!(stem_from_name(filename), stem);
+        assert_eq!(file_stem(filename), stem);
         assert_eq!(file_extension(filename), extension);
     }
 
