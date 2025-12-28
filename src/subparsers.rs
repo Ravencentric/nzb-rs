@@ -11,7 +11,9 @@ pub(crate) fn extract_filename_from_subject(subject: &str) -> Option<&str> {
     // We use a more relaxed version of what SABnzbd does:
     // https://github.com/sabnzbd/sabnzbd/blob/02b4a116dd4b46b2d2f33f7bbf249f2294458f2e/sabnzbd/nzbstuff.py#L104-L106
     if let Some(captured) = regex!(r#""(.*)""#).captures(subject) {
-        let trimmed = captured.get(1).map(|m| m.as_str().trim());
+        let trimmed = captured
+            .get(1)
+            .map(|m| m.as_str().trim().trim_matches(|c: char| c.is_whitespace() || c == '"'));
         if let Some(s) = trimmed
             && !s.is_empty()
         {
@@ -35,14 +37,11 @@ pub(crate) fn extract_filename_from_subject(subject: &str) -> Option<&str> {
 
     // Case 3: Something that might look like a filename.
     // https://github.com/sabnzbd/sabnzbd/blob/02b4a116dd4b46b2d2f33f7bbf249f2294458f2e/sabnzbd/nzbstuff.py#L104-L106
-    if let Some(captured) =
-        regex!(r"\b([\w\-+()' .,]+(?:\[[\w\-/+()' .,]*][\w\-+()' .,]*)*\.[A-Za-z0-9]{2,4})\b").captures(subject)
+    for re in regex!(r"\b([\w\-+()' .,]+(?:\[[\w\-/+()' .,]*][\w\-+()' .,]*)*\.[A-Za-z0-9]{2,4})\b").find_iter(subject)
     {
-        let trimmed = captured.get(1).map(|m| m.as_str().trim());
-        if let Some(s) = trimmed
-            && !s.is_empty()
-        {
-            return Some(s);
+        let trimmed = re.as_str().trim();
+        if !trimmed.is_empty() {
+            return Some(trimmed);
         }
     }
 
@@ -61,7 +60,7 @@ pub(crate) fn file_extension(name: &str) -> Option<&str> {
 
     const COMMON_EXTENSION_MAX_LEN: usize = 8;
 
-    if ext.len() >= COMMON_EXTENSION_MAX_LEN {
+    if ext.len() > COMMON_EXTENSION_MAX_LEN {
         return None;
     }
 
@@ -111,47 +110,224 @@ mod tests {
     use rand::seq::SliceRandom;
     use rstest::rstest;
 
+    #[derive(Debug, PartialEq)]
+    struct NameParts<'a> {
+        filename: Option<&'a str>,
+        stem: Option<&'a str>,
+        extension: Option<&'a str>,
+    }
+
     #[rstest]
     #[case(
+        r#"Great stuff (001/143) - "Filename.txt" yEnc (1/1)"#,
+        NameParts {
+            filename: Some("Filename.txt"),
+            stem: Some("Filename"),
+            extension: Some("txt"),
+        }
+    )]
+    #[case(
+        r#""910a284f98ebf57f6a531cd96da48838.vol01-03.par2" yEnc (1/3)"#,
+        NameParts {
+            filename: Some("910a284f98ebf57f6a531cd96da48838.vol01-03.par2"),
+            stem: Some("910a284f98ebf57f6a531cd96da48838.vol01-03"),
+            extension: Some("par2"),
+        }
+    )]
+    #[case(
+        r#"Subject-KrzpfTest [02/30] - ""KrzpfTest.part.nzb"" yEnc"#,
+        NameParts {
+            filename: Some("KrzpfTest.part.nzb"),
+            stem: Some("KrzpfTest.part"),
+            extension: Some("nzb"),
+        }
+    )]
+    #[case(
+        r#"[PRiVATE]-[WtFnZb]-[Supertje-_S03E11-12_-blabla_+_blabla_WEBDL-480p.mkv]-[4/12] - "" yEnc 9786 (1/1366)"#,
+        NameParts {
+            filename: Some("Supertje-_S03E11-12_-blabla_+_blabla_WEBDL-480p.mkv"),
+            stem: Some("Supertje-_S03E11-12_-blabla_+_blabla_WEBDL-480p"),
+            extension: Some("mkv"),
+        }
+    )]
+    #[case(
+        r#"[N3wZ] MAlXD245333\\::[PRiVATE]-[WtFnZb]-[Show.S04E04.720p.AMZN.WEBRip.x264-GalaxyTV.mkv]-[1/2] - "" yEnc  293197257 (1/573)"#,
+        NameParts {
+            filename: Some("Show.S04E04.720p.AMZN.WEBRip.x264-GalaxyTV.mkv"),
+            stem: Some("Show.S04E04.720p.AMZN.WEBRip.x264-GalaxyTV"),
+            extension: Some("mkv"),
+        }
+    )]
+    #[case(
+        r#"reftestnzb bf1664007a71 [1/6] - "20b9152c-57eb-4d02-9586-66e30b8e3ac2" yEnc (1/22) 15728640"#,
+        NameParts {
+            filename: Some("20b9152c-57eb-4d02-9586-66e30b8e3ac2"),
+            stem: Some("20b9152c-57eb-4d02-9586-66e30b8e3ac2"),
+            extension: None,
+        }
+    )]
+    #[case(
+        r#"Re: REQ Author Child's The Book-Thanks much - Child, Lee - Author - The Book.epub (1/1)"#,
+        NameParts {
+            filename: Some("REQ Author Child's The Book-Thanks much - Child, Lee - Author - The Book.epub"),
+            stem: Some("REQ Author Child's The Book-Thanks much - Child, Lee - Author - The Book"),
+            extension: Some("epub"),
+        }
+    )]
+    #[case(
+        r#"63258-0[001/101] - "63258-2.0" yEnc (1/250) (1/250)"#,
+        NameParts {
+            filename: Some("63258-2.0"),
+            stem: Some("63258-2"),
+            extension: Some("0"),
+        }
+    )]
+    #[case(
+        r#"63258-0[001/101] - "63258-2.0toolong" yEnc (1/250) (1/250)"#,
+        NameParts {
+            filename: Some("63258-2.0toolong"),
+            stem: Some("63258-2"),
+            extension: Some("0toolong"),
+        }
+    )]
+    #[case(
+        r#"Singer - A Album (2005) - [04/25] - 02 Sweetest Somebody (I Know).flac"#,
+        NameParts {
+            filename: Some("Singer - A Album (2005) - [04/25] - 02 Sweetest Somebody (I Know).flac"),
+            stem: Some("Singer - A Album (2005) - [04/25] - 02 Sweetest Somebody (I Know)"),
+            extension: Some("flac"),
+        }
+    )]
+    #[case(
+        "<>random!>",
+        NameParts {
+            filename: None,
+            stem: None,
+            extension: None,
+        }
+    )]
+    #[case(
+        "nZb]-[Supertje-_S03E11-12_",
+        // We intentionally diverge from SABnzbd's behavior here, as it would
+        // return the subject when it fails to extract a valid filename.
+        // Since idiomatic Rust favors Option types for such cases, we return None.
+        // This makes it clearer to the caller that no valid filename was found.
+        // Test Case: https://github.com/sabnzbd/sabnzbd/blob/a637d218c40af29279468a17a1e3ee2dbc976557/tests/test_misc.py#L904C15-L904C41
+        // Function Definition: https://github.com/sabnzbd/sabnzbd/blob/a637d218c40af29279468a17a1e3ee2dbc976557/sabnzbd/misc.py#L1642-L1655
+        NameParts {
+            filename: None, // Sabnzbd: "nZb]-[Supertje-_S03E11-12_"
+            stem: None,
+            extension: None,
+        }
+    )]
+    #[case(
+        r#"Bla [Now it's done.exe]"#,
+        NameParts {
+            filename: Some("Now it's done.exe"),
+            stem: Some("Now it's done"),
+            extension: Some("exe"),
+        }
+    )]
+    #[case(
+        r#"Bla [Now it's done.123nonsense]"#,
+        NameParts {
+            filename: None,
+            stem: None,
+            extension: None,
+        }
+    )]
+    #[case(
+        r#"[PRiVATE]-[WtFnZb]-[00000.clpi]-[1/46] - "" yEnc  788 (1/1)"#,
+        NameParts {
+            filename: Some("00000.clpi"),
+            stem: Some("00000"),
+            extension: Some("clpi"),
+        }
+    )]
+    #[case(
+        r#"[PRiVATE]-[WtFnZb]-[Video_(2001)_AC5.1_-RELEASE_[TAoE].mkv]-[1/23] - "" yEnc 1234567890 (1/23456)"#,
+        NameParts {
+            filename: Some("Video_(2001)_AC5.1_-RELEASE_[TAoE].mkv"),
+            stem: Some("Video_(2001)_AC5.1_-RELEASE_[TAoE]"),
+            extension: Some("mkv"),
+        }
+    )]
+    #[case(
+        r#"[PRiVATE]-[WtFnZb]-[219]-[1/series.name.s01e01.1080p.web.h264-group.mkv] -  yEnc (1/[PRiVATE] \\c2b510b594\\::686ea969999193.155368eba4965e56a8cd263382e012.f2712fdc::/97bd201cf931/) 1 (1/0)"#,
+        NameParts {
+            filename: Some("series.name.s01e01.1080p.web.h264-group.mkv"),
+            stem: Some("series.name.s01e01.1080p.web.h264-group"),
+            extension: Some("mkv"),
+        }
+    )]
+    #[case(
+        r#"[PRiVATE]-[WtFnZb]-[/More.Bla.S02E01.1080p.WEB.h264-EDITH[eztv.re].mkv-WtF[nZb]/More.Bla.S02E01.1080p.WEB.h264-EDITH.mkv]-[1/2] - "" yEnc  2990558544 (1/4173)"#,
+        NameParts {
+            filename: Some("More.Bla.S02E01.1080p.WEB.h264-EDITH[eztv.re].mkv"),
+            stem: Some("More.Bla.S02E01.1080p.WEB.h264-EDITH[eztv.re]"),
+            extension: Some("mkv"),
+        }
+    )]
+    #[case(
         "[011/116] - [AC-FFF] Highschool DxD BorN - 02 [BD][1080p-Hi10p] FLAC][Dual-Audio][442E5446].mkv yEnc (1/2401) 1720916370",
-        "[AC-FFF] Highschool DxD BorN - 02 [BD][1080p-Hi10p] FLAC][Dual-Audio][442E5446].mkv",
-        "[AC-FFF] Highschool DxD BorN - 02 [BD][1080p-Hi10p] FLAC][Dual-Audio][442E5446]",
-        Some("mkv")
+        NameParts {
+            filename: Some("[AC-FFF] Highschool DxD BorN - 02 [BD][1080p-Hi10p] FLAC][Dual-Audio][442E5446].mkv"),
+            stem: Some("[AC-FFF] Highschool DxD BorN - 02 [BD][1080p-Hi10p] FLAC][Dual-Audio][442E5446]"),
+            extension: Some("mkv"),
+        }
     )]
     #[case(
         "[010/108] - [SubsPlease] Ijiranaide, Nagatoro-san - 02 (1080p) [6E8E8065].mkv yEnc (1/2014) 1443366873",
-        "[SubsPlease] Ijiranaide, Nagatoro-san - 02 (1080p) [6E8E8065].mkv",
-        "[SubsPlease] Ijiranaide, Nagatoro-san - 02 (1080p) [6E8E8065]",
-        Some("mkv")
+        NameParts {
+            filename: Some("[SubsPlease] Ijiranaide, Nagatoro-san - 02 (1080p) [6E8E8065].mkv"),
+            stem: Some("[SubsPlease] Ijiranaide, Nagatoro-san - 02 (1080p) [6E8E8065]"),
+            extension: Some("mkv"),
+        }
     )]
     #[case(
-            r#"[1/8] - "TenPuru - No One Can Live on Loneliness v05 {+ "Book of Earthly Desires" pamphlet} (2021) (Digital) (KG Manga).cbz" yEnc (1/230) 164676947"#,
-            r#"TenPuru - No One Can Live on Loneliness v05 {+ "Book of Earthly Desires" pamphlet} (2021) (Digital) (KG Manga).cbz"#,
-            r#"TenPuru - No One Can Live on Loneliness v05 {+ "Book of Earthly Desires" pamphlet} (2021) (Digital) (KG Manga)"#,
-            Some("cbz"),
+        r#"[1/8] - "TenPuru - No One Can Live on Loneliness v05 {+ "Book of Earthly Desires" pamphlet} (2021) (Digital) (KG Manga).cbz" yEnc (1/230) 164676947"#,
+        NameParts {
+            filename: Some(r#"TenPuru - No One Can Live on Loneliness v05 {+ "Book of Earthly Desires" pamphlet} (2021) (Digital) (KG Manga).cbz"#),
+            stem: Some(r#"TenPuru - No One Can Live on Loneliness v05 {+ "Book of Earthly Desires" pamphlet} (2021) (Digital) (KG Manga)"#),
+            extension: Some("cbz"),
+        }
     )]
     #[case(
         r#"[1/10] - "ONE.PIECE.S01E1109.1080p.NF.WEB-DL.AAC2.0.H.264-VARYG" yEnc (1/1277) 915318101"#,
-        "ONE.PIECE.S01E1109.1080p.NF.WEB-DL.AAC2.0.H.264-VARYG",
-        "ONE.PIECE.S01E1109.1080p.NF.WEB-DL.AAC2.0.H.264-VARYG",
-        None
+        NameParts {
+            filename: Some("ONE.PIECE.S01E1109.1080p.NF.WEB-DL.AAC2.0.H.264-VARYG"),
+            stem: Some("ONE.PIECE.S01E1109.1080p.NF.WEB-DL.AAC2.0.H.264-VARYG"),
+            extension: None,
+        }
     )]
     #[case(
         r#"[1/10] - "ONE.PIECE.S01E1109.1080p.NF.WEB-DL.AAC2.0.H.264-VARYG.mkv" yEnc (1/1277) 915318101"#,
-        "ONE.PIECE.S01E1109.1080p.NF.WEB-DL.AAC2.0.H.264-VARYG.mkv",
-        "ONE.PIECE.S01E1109.1080p.NF.WEB-DL.AAC2.0.H.264-VARYG",
-        Some("mkv")
+        NameParts {
+            filename: Some("ONE.PIECE.S01E1109.1080p.NF.WEB-DL.AAC2.0.H.264-VARYG.mkv"),
+            stem: Some("ONE.PIECE.S01E1109.1080p.NF.WEB-DL.AAC2.0.H.264-VARYG"),
+            extension: Some("mkv"),
+        }
     )]
-    #[case(r#"[27/141] - "index.bdmv" yEnc (1/1) 280"#, "index.bdmv", "index", Some("bdmv"))]
-    fn test_name_stem_extension_extraction(
-        #[case] subject: &str,
-        #[case] filename: &str,
-        #[case] stem: &str,
-        #[case] extension: Option<&str>,
-    ) {
-        assert_eq!(extract_filename_from_subject(subject), Some(filename));
-        assert_eq!(file_stem(filename), stem);
-        assert_eq!(file_extension(filename), extension);
+    #[case(
+        r#"[27/141] - "index.bdmv" yEnc (1/1) 280"#,
+        NameParts {
+            filename: Some("index.bdmv"),
+            stem: Some("index"),
+            extension: Some("bdmv"),
+        }
+    )]
+    fn test_name_stem_extension_extraction(#[case] subject: &str, #[case] expected: NameParts) {
+        let filename = extract_filename_from_subject(subject);
+        let stem = filename.map(file_stem);
+        let extension = filename.and_then(file_extension);
+
+        let actual = NameParts {
+            filename,
+            stem,
+            extension,
+        };
+
+        assert_eq!(actual, expected);
     }
 
     #[test]
