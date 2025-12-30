@@ -1,9 +1,11 @@
-use crate::errors::{FileAttributeKind, ParseNzbError};
-use crate::{File, Meta, Segment, subparsers};
+use std::sync::LazyLock;
+
 use chrono::DateTime;
 use regex::Regex;
 use roxmltree::Document;
-use std::sync::LazyLock;
+
+use crate::errors::{FileAttributeKind, ParseNzbError};
+use crate::{File, Meta, Segment, subparsers};
 
 pub(crate) fn sanitize_xml(xml: &str) -> &str {
     // roxmltree doesn't support XML declarations or DOCTYPEs, so we need to remove them.
@@ -267,9 +269,11 @@ pub(crate) fn sabnzbd_is_obfuscated(filestem: &str) -> bool {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
-    use rstest::rstest;
     use std::path::Path;
+
+    use rstest::rstest;
+
+    use super::*;
 
     // Test cases copied from SABnzbd’s filename deobfuscation tests.
     // Thanks to the SABnzbd project for these examples.

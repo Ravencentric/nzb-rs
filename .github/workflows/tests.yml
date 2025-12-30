@@ -29,4 +29,4 @@ jobs:
       - run: cargo build --locked
       - run: cargo hack test --each-feature --locked
       - run: cargo clippy --all-features --all-targets
-      - run: cargo fmt --check
+      - run: cargo +nightly fmt --check

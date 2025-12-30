@@ -1,6 +1,7 @@
-use regex::Regex;
 use std::path::Path;
 use std::sync::LazyLock;
+
+use regex::Regex;
 
 /// Splits a string once on `delimiter`, trimming whitespace from both results.
 ///
@@ -48,9 +49,9 @@ fn is_multipart_counter(s: &str) -> bool {
 ///
 /// This function is based on SABnzbd’s [`subject_name_extractor`],
 /// but is not an exact port and intentionally diverges in some cases.
-/// 
+///
 /// Notably, it returns `None` when no valid filename is found,
-/// whereas SABnzbd’s [`subject_name_extractor`] would return the original subject string.
+/// whereas SABnzbd’s [`subject_name_extractor`] returns the original subject string.
 ///
 /// [`subject_name_extractor`]: https://github.com/sabnzbd/sabnzbd/blob/b5dda7c52d9055a3557e7f5fc6e76fe86c4c4365/sabnzbd/misc.py#L1642-L1655
 pub(crate) fn extract_filename_from_subject(subject: &str) -> Option<&str> {
@@ -61,8 +62,8 @@ pub(crate) fn extract_filename_from_subject(subject: &str) -> Option<&str> {
     // Case 1: Filename enclosed in quotes
     // ---------------------------------------------------------------------
     //
-    // Based on SABnzbd’s [`RE_SUBJECT_FILENAME_QUOTES`] but
-    // a bit more relaxed as used in [`subject_name_extractor`].
+    // Based on SABnzbd’s [`RE_SUBJECT_FILENAME_QUOTES`], but
+    // slightly more relaxed, as used in [`subject_name_extractor`].
     //
     // [`RE_SUBJECT_FILENAME_QUOTES`]: https://github.com/sabnzbd/sabnzbd/blob/02b4a116dd4b46b2d2f33f7bbf249f2294458f2e/sabnzbd/nzbstuff.py#L104
     // [`subject_name_extractor`]: https://github.com/sabnzbd/sabnzbd/blob/02b4a116dd4b46b2d2f33f7bbf249f2294458f2e/sabnzbd/nzbstuff.py#L2170-L2172
@@ -110,8 +111,9 @@ pub(crate) fn extract_filename_from_subject(subject: &str) -> Option<&str> {
     // Case 3: Best-effort filename extraction
     // ---------------------------------------------------------------------
     //
-    // The regex used here is an identical port of SABnzbd’s [`RE_SUBJECT_BASIC_FILENAME`]
-    // as used in [`subject_name_extractor`].
+    // The regex used here is a direct port of SABnzbd’s
+    // [`RE_SUBJECT_BASIC_FILENAME`], as used in
+    // [`subject_name_extractor`].
     //
     // [`RE_SUBJECT_BASIC_FILENAME`]: https://github.com/sabnzbd/sabnzbd/blob/b5dda7c52d9055a3557e7f5fc6e76fe86c4c4365/sabnzbd/misc.py#L90
     // [`subject_name_extractor`]: https://github.com/sabnzbd/sabnzbd/blob/b5dda7c52d9055a3557e7f5fc6e76fe86c4c4365/sabnzbd/misc.py#L1650-L1652
@@ -187,9 +189,10 @@ pub(crate) fn sort_key_from_subject(subject: &str) -> (Option<u32>, &str) {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use rand::seq::SliceRandom;
     use rstest::rstest;
+
+    use super::*;
 
     #[derive(Debug, PartialEq)]
     struct NameParts<'a> {
