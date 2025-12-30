@@ -1,6 +1,6 @@
+use regex::Regex;
 use std::path::Path;
 use std::sync::LazyLock;
-use regex::Regex;
 
 /// Splits a string once on `delimiter`, trimming whitespace from both results.
 ///
@@ -42,14 +42,13 @@ fn is_multipart_counter(s: &str) -> bool {
     }
 }
 
-
 /// Attempts to extract a filename (including extension) from the subject.
 ///
 /// Returns `None` if no filename can be identified.
 ///
 /// This function is based on SABnzbd’s [`subject_name_extractor`],
 /// but is not an exact port and intentionally diverges in some cases.
-/// 
+///
 /// [`subject_name_extractor`]: https://github.com/sabnzbd/sabnzbd/blob/b5dda7c52d9055a3557e7f5fc6e76fe86c4c4365/sabnzbd/misc.py#L1642-L1655
 pub(crate) fn extract_filename_from_subject(subject: &str) -> Option<&str> {
     // The extraction logic is intentionally ordered from most specific to most
@@ -63,7 +62,7 @@ pub(crate) fn extract_filename_from_subject(subject: &str) -> Option<&str> {
     // https://github.com/sabnzbd/sabnzbd/blob/02b4a116dd4b46b2d2f33f7bbf249f2294458f2e/sabnzbd/nzbstuff.py#L104-L106
     if let Some(start) = subject.find('"')
         && let Some(end) = subject.rfind('"')
-    {   
+    {
         let start = start + 1;
         if start < end {
             let s = subject[start..end].trim_matches(|c: char| c.is_whitespace() || c == '"');
@@ -110,12 +109,11 @@ pub(crate) fn extract_filename_from_subject(subject: &str) -> Option<&str> {
     //
     // [`RE_SUBJECT_BASIC_FILENAME`]: https://github.com/sabnzbd/sabnzbd/blob/b5dda7c52d9055a3557e7f5fc6e76fe86c4c4365/sabnzbd/misc.py#L90
     // [`subject_name_extractor`]: https://github.com/sabnzbd/sabnzbd/blob/b5dda7c52d9055a3557e7f5fc6e76fe86c4c4365/sabnzbd/misc.py#L1650-L1652
-    static SABNZBD_SUBJECT_BASIC_FILENAME : LazyLock<Regex> = LazyLock::new(|| {
+    static SABNZBD_SUBJECT_BASIC_FILENAME: LazyLock<Regex> = LazyLock::new(|| {
         Regex::new(r"\b([\w\-+()' .,]+(?:\[[\w\-/+()' .,]*][\w\-+()' .,]*)*\.[A-Za-z0-9]{2,4})\b").unwrap()
     });
-    
-    for matched in SABNZBD_SUBJECT_BASIC_FILENAME.find_iter(subject)
-    {
+
+    for matched in SABNZBD_SUBJECT_BASIC_FILENAME.find_iter(subject) {
         let trimmed = matched.as_str().trim();
         if !trimmed.is_empty() {
             return Some(trimmed);
