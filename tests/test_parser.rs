@@ -1,9 +1,10 @@
+use std::file;
+use std::path::PathBuf;
+
 use chrono::DateTime;
 use nzb_rs::{File, Nzb, Segment};
 use pretty_assertions::assert_eq;
 use rstest::rstest;
-use std::file;
-use std::path::PathBuf;
 
 fn get_file(name: &str) -> PathBuf {
     std::fs::canonicalize(file!())

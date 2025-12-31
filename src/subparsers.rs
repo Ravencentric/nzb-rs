@@ -1,45 +1,128 @@
-use lazy_regex::regex;
 use std::path::Path;
+use std::sync::LazyLock;
 
-/// Extract the complete name of the file with it's extension from the subject.
-/// May return `None` if it fails to extract the name.
+use regex::Regex;
+
+/// Splits a string once on `delimiter`, trimming whitespace from both results.
+///
+/// Returns `None` if the delimiter is not present.
+fn split_once_trimmed<'a>(s: &'a str, delimiter: &str) -> Option<(&'a str, &'a str)> {
+    let (left, right) = s.split_once(delimiter)?;
+    Some((left.trim(), right.trim()))
+}
+
+/// Returns `true` if the string represents a valid unsigned integer.
+///
+/// Leading and trailing whitespace is ignored.
+fn is_number(s: &str) -> bool {
+    s.trim().parse::<u64>().is_ok()
+}
+
+/// Returns `true` if the string matches a multipart counter format.
+///
+/// Accepted forms are `[x/y]` or `(x/y)`, where both values must be numeric.
+fn is_multipart_counter(s: &str) -> bool {
+    let mut chars = s.trim().chars();
+
+    let close = match chars.next() {
+        Some('[') => ']',
+        Some('(') => ')',
+        _ => return false,
+    };
+
+    if chars.next_back() != Some(close) {
+        return false;
+    }
+
+    let interior = chars.as_str();
+
+    if let Some((left, right)) = interior.split_once('/') {
+        is_number(left) && is_number(right)
+    } else {
+        false
+    }
+}
+
+/// Attempts to extract a filename (including extension) from the subject.
+///
+/// Returns `None` if no filename can be identified.
+///
+/// This function is based on SABnzbd’s [`subject_name_extractor`],
+/// but is not an exact port and intentionally diverges in some cases.
+///
+/// Notably, it returns `None` when no valid filename is found,
+/// whereas SABnzbd’s [`subject_name_extractor`] returns the original subject string.
+///
+/// [`subject_name_extractor`]: https://github.com/sabnzbd/sabnzbd/blob/b5dda7c52d9055a3557e7f5fc6e76fe86c4c4365/sabnzbd/misc.py#L1642-L1655
 pub(crate) fn extract_filename_from_subject(subject: &str) -> Option<&str> {
-    // The order of regular expressions is deliberate; patterns are arranged
-    // from most specific to most general to avoid broader patterns incorrectly matching.
+    // The extraction logic is intentionally ordered from most specific to most
+    // general to avoid false positives.
 
-    // Case 1: Filename is in quotes.
-    // We use a more relaxed version of what SABnzbd does:
-    // https://github.com/sabnzbd/sabnzbd/blob/02b4a116dd4b46b2d2f33f7bbf249f2294458f2e/sabnzbd/nzbstuff.py#L104-L106
-    if let Some(captured) = regex!(r#""(.*)""#).captures(subject) {
-        let trimmed = captured
-            .get(1)
-            .map(|m| m.as_str().trim().trim_matches(|c: char| c.is_whitespace() || c == '"'));
-        if let Some(s) = trimmed
-            && !s.is_empty()
-        {
-            return Some(s);
+    // ---------------------------------------------------------------------
+    // Case 1: Filename enclosed in quotes
+    // ---------------------------------------------------------------------
+    //
+    // Based on SABnzbd’s [`RE_SUBJECT_FILENAME_QUOTES`], but
+    // slightly more relaxed, as used in [`subject_name_extractor`].
+    //
+    // [`RE_SUBJECT_FILENAME_QUOTES`]: https://github.com/sabnzbd/sabnzbd/blob/02b4a116dd4b46b2d2f33f7bbf249f2294458f2e/sabnzbd/nzbstuff.py#L104
+    // [`subject_name_extractor`]: https://github.com/sabnzbd/sabnzbd/blob/02b4a116dd4b46b2d2f33f7bbf249f2294458f2e/sabnzbd/nzbstuff.py#L2170-L2172
+    if let Some(start) = subject.find('"')
+        && let Some(end) = subject.rfind('"')
+    {
+        let start = start + 1;
+        if start < end {
+            let s = subject[start..end].trim_matches(|c: char| c.is_whitespace() || c == '"');
+            if !s.is_empty() {
+                return Some(s);
+            }
         }
     }
 
-    // Case 2: Subject follows a specific pattern.
-    // https://regex101.com/r/B03qZs/2
-    // [011/116] - [AC-FFF] Highschool DxD BorN - 02 [BD][1080p-Hi10p] FLAC][Dual-Audio][442E5446].mkv yEnc (1/2401) 1720916370
-    if let Some(captured) =
-        regex!(r"^(?:\[|\()(?:\d+/\d+)(?:\]|\))\s-\s(.*)\syEnc\s(?:\[|\()(?:\d+/\d+)(?:\]|\))\s\d+").captures(subject)
+    // ---------------------------------------------------------------------
+    // Case 2: Structured multipart yEnc subject
+    // ---------------------------------------------------------------------
+    //
+    // This matches a common Usenet pattern of:
+    //   [part/total] - <filename> yEnc (chunk/total) <digits>
+    //
+    // Example:
+    //   [011/116] - [Foobar] Violet Evergarden - 01.mkv yEnc (1/2401) 1720916370
+    //
+    // Parsed as:
+    // - part: "[011/116]"
+    // - filename: "[Foobar] Violet Evergarden - 01.mkv"
+    // - chunk: "(1/2401)"
+    // - trailing digits: "1720916370"
+    if let Some((part, rest)) = split_once_trimmed(subject, "-")
+        && is_multipart_counter(part)
+        && let Some((filename, rest)) = split_once_trimmed(rest, "yEnc")
+        && let Some((chunk, digits)) = split_once_trimmed(rest, " ")
+        && is_multipart_counter(chunk)
+        && is_number(digits)
     {
-        let trimmed = captured.get(1).map(|m| m.as_str().trim());
-        if let Some(s) = trimmed
-            && !s.is_empty()
-        {
-            return Some(s);
+        let trimmed = filename.trim();
+        if !trimmed.is_empty() {
+            return Some(trimmed);
         }
     }
 
-    // Case 3: Something that might look like a filename.
-    // https://github.com/sabnzbd/sabnzbd/blob/02b4a116dd4b46b2d2f33f7bbf249f2294458f2e/sabnzbd/nzbstuff.py#L104-L106
-    for re in regex!(r"\b([\w\-+()' .,]+(?:\[[\w\-/+()' .,]*][\w\-+()' .,]*)*\.[A-Za-z0-9]{2,4})\b").find_iter(subject)
-    {
-        let trimmed = re.as_str().trim();
+    // ---------------------------------------------------------------------
+    // Case 3: Best-effort filename extraction
+    // ---------------------------------------------------------------------
+    //
+    // The regex used here is a direct port of SABnzbd’s
+    // [`RE_SUBJECT_BASIC_FILENAME`], as used in
+    // [`subject_name_extractor`].
+    //
+    // [`RE_SUBJECT_BASIC_FILENAME`]: https://github.com/sabnzbd/sabnzbd/blob/b5dda7c52d9055a3557e7f5fc6e76fe86c4c4365/sabnzbd/misc.py#L90
+    // [`subject_name_extractor`]: https://github.com/sabnzbd/sabnzbd/blob/b5dda7c52d9055a3557e7f5fc6e76fe86c4c4365/sabnzbd/misc.py#L1650-L1652
+    static SABNZBD_SUBJECT_BASIC_FILENAME: LazyLock<Regex> = LazyLock::new(|| {
+        Regex::new(r"\b([\w\-+()' .,]+(?:\[[\w\-/+()' .,]*][\w\-+()' .,]*)*\.[A-Za-z0-9]{2,4})\b").unwrap()
+    });
+
+    for matched in SABNZBD_SUBJECT_BASIC_FILENAME.find_iter(subject) {
+        let trimmed = matched.as_str().trim();
         if !trimmed.is_empty() {
             return Some(trimmed);
         }
@@ -106,9 +189,10 @@ pub(crate) fn sort_key_from_subject(subject: &str) -> (Option<u32>, &str) {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use rand::seq::SliceRandom;
     use rstest::rstest;
+
+    use super::*;
 
     #[derive(Debug, PartialEq)]
     struct NameParts<'a> {

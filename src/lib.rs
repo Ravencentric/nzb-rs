@@ -4,19 +4,20 @@ mod errors;
 mod parser;
 mod subparsers;
 
-pub use crate::errors::{FileAttributeKind, ParseNzbError, ParseNzbFileError};
-use crate::parser::{parse_files, parse_metadata, sabnzbd_is_obfuscated, sanitize_xml};
-use crate::subparsers::{extract_filename_from_subject, file_extension, file_stem};
-use chrono::{DateTime, Utc};
-use flate2::read::GzDecoder;
-use itertools::Itertools;
 use std::fs;
 use std::io::Read;
 use std::path::Path;
 use std::str::FromStr;
 
+use chrono::{DateTime, Utc};
+use flate2::read::GzDecoder;
+use itertools::Itertools;
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
+
+pub use crate::errors::{FileAttributeKind, ParseNzbError, ParseNzbFileError};
+use crate::parser::{parse_files, parse_metadata, sabnzbd_is_obfuscated, sanitize_xml};
+use crate::subparsers::{extract_filename_from_subject, file_extension, file_stem};
 
 /// Represents optional creator-definable metadata in an NZB.
 #[derive(Clone, Debug, Default, PartialEq, Eq, PartialOrd, Ord, Hash)]
@@ -239,7 +240,7 @@ impl Nzb {
     /// # Example
     ///
     /// ```rust
-    /// use nzb_rs::{ParseNzbError, Nzb};
+    /// use nzb_rs::{Nzb, ParseNzbError};
     ///
     /// fn main() -> Result<(), ParseNzbError> {
     ///     let xml = r#"
@@ -280,7 +281,7 @@ impl Nzb {
     /// # Example
     ///
     /// ```rust
-    /// use nzb_rs::{ParseNzbFileError, Nzb};
+    /// use nzb_rs::{Nzb, ParseNzbFileError};
     ///
     /// fn main() -> Result<(), ParseNzbFileError> {
     ///     let nzb = Nzb::parse_file("tests/nzbs/big_buck_bunny.nzb")?;
