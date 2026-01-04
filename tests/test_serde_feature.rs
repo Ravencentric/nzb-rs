@@ -3,7 +3,6 @@ use std::path::PathBuf;
 
 use chrono::DateTime;
 use nzb_rs::{File, Nzb, Segment};
-use pretty_assertions::assert_eq;
 use rstest::rstest;
 
 fn get_file(name: &str) -> PathBuf {

@@ -2,7 +2,6 @@ use std::io;
 use std::path::{Path, PathBuf};
 
 use nzb_rs::{FileAttributeKind, Nzb, ParseNzbError, ParseNzbFileError};
-use pretty_assertions::assert_eq;
 
 fn get_file(name: &str) -> PathBuf {
     std::fs::canonicalize(file!())
