@@ -4,13 +4,11 @@ use std::path::{Path, PathBuf};
 use nzb_rs::{FileAttributeKind, Nzb, ParseNzbError, ParseNzbFileError};
 
 fn get_file(name: &str) -> PathBuf {
-    std::fs::canonicalize(file!())
-        .unwrap()
-        .parent()
-        .unwrap()
+    PathBuf::new()
+        .join(env!("CARGO_MANIFEST_DIR"))
+        .join("tests")
         .join("nzbs")
         .join(name)
-        .to_path_buf()
 }
 
 #[test]

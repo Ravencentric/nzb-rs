@@ -1,4 +1,3 @@
-use std::file;
 use std::path::PathBuf;
 
 use chrono::DateTime;
@@ -6,13 +5,11 @@ use nzb_rs::{File, Nzb, Segment};
 use rstest::rstest;
 
 fn get_file(name: &str) -> PathBuf {
-    std::fs::canonicalize(file!())
-        .unwrap()
-        .parent()
-        .unwrap()
+    PathBuf::new()
+        .join(env!("CARGO_MANIFEST_DIR"))
+        .join("tests")
         .join("nzbs")
         .join(name)
-        .to_path_buf()
 }
 
 #[rstest]
