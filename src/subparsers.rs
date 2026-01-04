@@ -65,8 +65,8 @@ pub(crate) fn extract_filename_from_subject(subject: &str) -> Option<&str> {
     // Based on SABnzbd’s [`RE_SUBJECT_FILENAME_QUOTES`], but
     // slightly more relaxed, as used in [`subject_name_extractor`].
     //
-    // [`RE_SUBJECT_FILENAME_QUOTES`]: https://github.com/sabnzbd/sabnzbd/blob/02b4a116dd4b46b2d2f33f7bbf249f2294458f2e/sabnzbd/nzbstuff.py#L104
-    // [`subject_name_extractor`]: https://github.com/sabnzbd/sabnzbd/blob/02b4a116dd4b46b2d2f33f7bbf249f2294458f2e/sabnzbd/nzbstuff.py#L2170-L2172
+    // [`RE_SUBJECT_FILENAME_QUOTES`]: https://github.com/sabnzbd/sabnzbd/blob/448c034f79eb0c02c34d0da5e546926d7bec0d61/sabnzbd/misc.py#L90
+    // [`subject_name_extractor`]: https://github.com/sabnzbd/sabnzbd/blob/448c034f79eb0c02c34d0da5e546926d7bec0d61/sabnzbd/misc.py#L1623-L1628
     if let Some(start) = subject.find('"')
         && let Some(end) = subject.rfind('"')
     {
@@ -115,8 +115,8 @@ pub(crate) fn extract_filename_from_subject(subject: &str) -> Option<&str> {
     // [`RE_SUBJECT_BASIC_FILENAME`], as used in
     // [`subject_name_extractor`].
     //
-    // [`RE_SUBJECT_BASIC_FILENAME`]: https://github.com/sabnzbd/sabnzbd/blob/b5dda7c52d9055a3557e7f5fc6e76fe86c4c4365/sabnzbd/misc.py#L90
-    // [`subject_name_extractor`]: https://github.com/sabnzbd/sabnzbd/blob/b5dda7c52d9055a3557e7f5fc6e76fe86c4c4365/sabnzbd/misc.py#L1650-L1652
+    // [`RE_SUBJECT_BASIC_FILENAME`]: https://github.com/sabnzbd/sabnzbd/blob/448c034f79eb0c02c34d0da5e546926d7bec0d61/sabnzbd/misc.py#L91
+    // [`subject_name_extractor`]: https://github.com/sabnzbd/sabnzbd/blob/448c034f79eb0c02c34d0da5e546926d7bec0d61/sabnzbd/misc.py#L1630-L1633
     static SABNZBD_SUBJECT_BASIC_FILENAME: LazyLock<Regex> = LazyLock::new(|| {
         Regex::new(r"\b([\w\-+()' .,]+(?:\[[\w\-/+()' .,]*][\w\-+()' .,]*)*\.[A-Za-z0-9]{2,4})\b").unwrap()
     });
