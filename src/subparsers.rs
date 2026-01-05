@@ -284,20 +284,26 @@ mod tests {
     )]
     #[case(
         "<>random!>",
+        // No valid filename can be extracted from this subject.
+        // SABnzbd falls back to returning the original subject string,
+        // but our implementation treats that as a failed extraction.
+        //
+        // Corresponding SABnzbd test:
+        // https://github.com/sabnzbd/sabnzbd/blob/33aa4f1199371b1cf262028a0aae53d0766e82b6/tests/test_misc.py#L903
         NameParts {
-            filename: None,
+            filename: None, // Sabnzbd: "<>random!>"
             stem: None,
             extension: None,
         }
     )]
     #[case(
         "nZb]-[Supertje-_S03E11-12_",
-        // We intentionally diverge from SABnzbd's behavior here, as it would
-        // return the subject when it fails to extract a valid filename.
-        // Since idiomatic Rust favors Option types for such cases, we return None.
-        // This makes it clearer to the caller that no valid filename was found.
-        // Test Case: https://github.com/sabnzbd/sabnzbd/blob/a637d218c40af29279468a17a1e3ee2dbc976557/tests/test_misc.py#L904C15-L904C41
-        // Function Definition: https://github.com/sabnzbd/sabnzbd/blob/a637d218c40af29279468a17a1e3ee2dbc976557/sabnzbd/misc.py#L1642-L1655
+        // No valid filename can be extracted from this subject.
+        // SABnzbd falls back to returning the original subject string,
+        // but our implementation treats that as a failed extraction.
+        //
+        // Corresponding SABnzbd test:
+        // https://github.com/sabnzbd/sabnzbd/blob/33aa4f1199371b1cf262028a0aae53d0766e82b6/tests/test_misc.py#L904
         NameParts {
             filename: None, // Sabnzbd: "nZb]-[Supertje-_S03E11-12_"
             stem: None,
