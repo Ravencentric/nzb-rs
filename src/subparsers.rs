@@ -202,6 +202,11 @@ mod tests {
     }
 
     #[rstest]
+    // These test cases were sourced from:
+    // https://github.com/sabnzbd/sabnzbd/blob/33aa4f1199371b1cf262028a0aae53d0766e82b6/tests/test_misc.py#L871-L926
+    // with a few additional cases added at the end.
+    //
+    // ---- SABnzbd-derived test cases START ----
     #[case(
         r#"Great stuff (001/143) - "Filename.txt" yEnc (1/1)"#,
         NameParts {
@@ -358,6 +363,7 @@ mod tests {
             extension: Some("mkv"),
         }
     )]
+    // ---- SABnzbd-derived test cases END ----
     #[case(
         "[011/116] - [AC-FFF] Highschool DxD BorN - 02 [BD][1080p-Hi10p] FLAC][Dual-Audio][442E5446].mkv yEnc (1/2401) 1720916370",
         NameParts {
