@@ -449,8 +449,8 @@ fn test_standard_ish_subject_with_no_quotes() {
         Some("[AC-FFF] Highschool DxD BorN - 02 [BD][1080p-Hi10p] FLAC][Dual-Audio][442E5446]")
     );
     assert_eq!(nzb.file().extension(), Some("mkv"));
-    assert_eq!(nzb.file().is_par2(), false);
-    assert_eq!(nzb.file().is_rar(), false);
+    assert!(!nzb.file().is_par2());
+    assert!(!nzb.file().is_rar());
 }
 
 #[test]
@@ -480,8 +480,8 @@ fn test_subsplease_nagataro_subject_with_no_quotes() {
         Some("[SubsPlease] Ijiranaide, Nagatoro-san - 02 (1080p) [6E8E8065]")
     );
     assert_eq!(nzb.file().extension(), Some("mkv"));
-    assert_eq!(nzb.file().is_par2(), false);
-    assert_eq!(nzb.file().is_rar(), false);
+    assert!(!nzb.file().is_par2());
+    assert!(!nzb.file().is_rar());
 }
 
 #[test]
@@ -492,11 +492,11 @@ fn test_bad_subject() {
     assert_eq!(nzb.file().name(), None);
     assert_eq!(nzb.file().stem(), None);
     assert_eq!(nzb.file().extension(), None);
-    assert_eq!(nzb.file().is_par2(), false);
-    assert_eq!(nzb.file().is_rar(), false);
-    assert_eq!(nzb.is_rar(), false);
-    assert_eq!(nzb.has_par2(), false);
-    assert_eq!(nzb.is_obfuscated(), true);
+    assert!(!nzb.file().is_par2());
+    assert!(!nzb.file().is_rar());
+    assert!(!nzb.is_rar());
+    assert!(!nzb.has_par2());
+    assert!(nzb.is_obfuscated());
 }
 
 #[test]
