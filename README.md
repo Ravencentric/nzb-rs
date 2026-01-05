@@ -54,6 +54,16 @@ fn main() -> Result<(), ParseNzbError> {
 - This library must not panic. Any panic should be considered a bug and reported.
 - This library uses [`roxmltree`](https://crates.io/crates/roxmltree) for parsing the NZB. `roxmltree` is written entirely in safe Rust, so by Rust's guarantees the worst that a malicious NZB can do is to cause a panic.
 
+## Acknowledgements
+
+Some parts of this project's codebase, including parsing-related logic and
+associated test cases, are inspired by or derived from
+[SABnzbd](https://github.com/sabnzbd/sabnzbd).
+
+Thanks to the SABnzbd project and its contributors for their work. Related
+sections of code are annotated with comments pointing back to the original
+SABnzbd sources where appropriate.
+
 ## License
 
 Licensed under either of
