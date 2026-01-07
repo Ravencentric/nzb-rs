@@ -195,7 +195,7 @@ pub(crate) fn sabnzbd_is_obfuscated(filestem: &str) -> bool {
 
     // 32-character hex strings, e.g.
     // ...blabla.H.264/b082fa0beaa644d3aa01045d5b8d0b36.mkv is certainly obfuscated
-    if length == 32 && filestem_bytes.iter().all(|b| b.is_ascii_hexdigit()) {
+    if length == 32 && filestem_bytes.iter().all(u8::is_ascii_hexdigit) {
         return true;
     }
 
@@ -209,7 +209,7 @@ pub(crate) fn sabnzbd_is_obfuscated(filestem: &str) -> bool {
     // So: square brackets plus 30+ hex digit
     static HEX_DIGITS: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"[a-f0-9]{30}").unwrap());
     static WORDS_IN_SQUARE_BRACKETS: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"\[\w+\]").unwrap());
-    if HEX_DIGITS.is_match(filestem) && WORDS_IN_SQUARE_BRACKETS.captures_iter(filestem).count() >= 2 {
+    if HEX_DIGITS.is_match(filestem) && WORDS_IN_SQUARE_BRACKETS.find_iter(filestem).count() >= 2 {
         return true;
     }
 
