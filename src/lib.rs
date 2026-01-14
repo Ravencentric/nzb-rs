@@ -16,8 +16,8 @@ use itertools::Itertools;
 use serde::{Deserialize, Serialize};
 
 pub use crate::errors::{FileAttributeKind, ParseNzbError, ParseNzbFileError};
-use crate::parser::{parse_files, parse_metadata, sabnzbd_is_obfuscated, sanitize_xml};
-use crate::subparsers::{extract_filename_from_subject, file_extension, file_stem};
+use crate::parser::{parse_files, parse_metadata, sanitize_xml};
+use crate::subparsers::{extract_filename_from_subject, file_extension, file_stem, is_obfuscated};
 
 /// Represents optional creator-definable metadata in an NZB.
 #[derive(Clone, Debug, Default, PartialEq, Eq, PartialOrd, Ord, Hash)]
@@ -202,7 +202,7 @@ impl File {
 
     /// Return [`true`] if the file is obfuscated, [`false`] otherwise.
     pub fn is_obfuscated(&self) -> bool {
-        self.stem().is_none_or(sabnzbd_is_obfuscated)
+        self.stem().is_none_or(is_obfuscated)
     }
 }
 
