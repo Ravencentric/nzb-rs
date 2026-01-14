@@ -308,8 +308,13 @@ pub(crate) fn is_obfuscated(filestem: &str) -> bool {
 pub(crate) fn sort_key_from_subject(subject: &str) -> (Option<u32>, &str) {
     let num = subject
         .strip_prefix('[')
-        .and_then(|s| s.split_once('/'))
-        .and_then(|(digits, _)| digits.parse().ok());
+        .and_then(|s| s.split_once(']'))
+        .and_then(|(counter, _)| counter.split_once('/'))
+        .and_then(|(left, right)| {
+            let left = left.parse::<u32>().ok()?;
+            let _ = right.parse::<u32>().ok()?;
+            Some(left)
+        });
 
     (num, subject)
 }
