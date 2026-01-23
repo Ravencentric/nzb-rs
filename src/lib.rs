@@ -17,7 +17,7 @@ use serde::{Deserialize, Serialize};
 
 pub use crate::errors::{FileAttributeKind, ParseNzbError, ParseNzbFileError};
 use crate::parser::{parse_files, parse_metadata, sanitize_xml};
-use crate::subparsers::{file_name, file_extension, file_stem, is_obfuscated};
+use crate::subparsers::{file_extension, file_name, file_stem, is_obfuscated};
 
 /// Represents optional creator-definable metadata in an NZB.
 #[derive(Clone, Debug, Default, PartialEq, Eq, PartialOrd, Ord, Hash)]

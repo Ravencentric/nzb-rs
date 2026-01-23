@@ -174,8 +174,7 @@ pub(crate) fn parse_files(nzb: &Document) -> Result<Vec<File>, ParseNzbError> {
     files.sort_by(|a, b| {
         let ka = subparsers::file_number(&a.subject);
         let kb = subparsers::file_number(&b.subject);
-        ka.cmp(&kb)
-            .then_with(|| a.subject.cmp(&b.subject))
+        ka.cmp(&kb).then_with(|| a.subject.cmp(&b.subject))
     });
 
     Ok(files)
