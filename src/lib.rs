@@ -17,7 +17,7 @@ use serde::{Deserialize, Serialize};
 
 pub use crate::errors::{FileAttributeKind, ParseNzbError, ParseNzbFileError};
 use crate::parser::{parse_files, parse_metadata, sanitize_xml};
-use crate::subparsers::{extract_filename_from_subject, file_extension, file_stem, is_obfuscated};
+use crate::subparsers::{file_name, file_extension, file_stem, is_obfuscated};
 
 /// Represents optional creator-definable metadata in an NZB.
 #[derive(Clone, Debug, Default, PartialEq, Eq, PartialOrd, Ord, Hash)]
@@ -113,7 +113,7 @@ impl File {
     /// May return [`None`] if it fails to extract the name.
     #[must_use]
     pub fn name(&self) -> Option<&str> {
-        extract_filename_from_subject(&self.subject)
+        file_name(&self.subject)
     }
 
     /// Base name of the file without it's extension extracted from the [`File::name`].

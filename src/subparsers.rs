@@ -18,10 +18,10 @@ fn is_number(s: &str) -> bool {
     s.trim().parse::<u64>().is_ok()
 }
 
-/// Returns `true` if the string matches a multipart counter format.
+/// Returns `true` if the string matches a counter format.
 ///
 /// Accepted forms are `[x/y]` or `(x/y)`, where both values must be numeric.
-fn is_multipart_counter(s: &str) -> bool {
+fn is_counter(s: &str) -> bool {
     let mut chars = s.trim().chars();
 
     let close = match chars.next() {
@@ -46,7 +46,7 @@ fn is_multipart_counter(s: &str) -> bool {
 /// Returns `true` if the string contains at least 30 consecutive hexdigits
 ///
 /// The run must be uninterrupted, any non-hexdigit resets the count.
-/// Equivalent to the regex `[a-f0-9]{30}`.
+/// Equivalent to the regex `[a-fA-F0-9]{30}`.
 fn has_30_consecutive_hexdigits(s: &str) -> bool {
     let mut run = 0;
 
@@ -89,7 +89,7 @@ fn has_two_bracketed_words(s: &str) -> bool {
 /// whereas SABnzbd’s [`subject_name_extractor`] returns the original subject string.
 ///
 /// [`subject_name_extractor`]: https://github.com/sabnzbd/sabnzbd/blob/b5dda7c52d9055a3557e7f5fc6e76fe86c4c4365/sabnzbd/misc.py#L1642-L1655
-pub(crate) fn extract_filename_from_subject(subject: &str) -> Option<&str> {
+pub(crate) fn file_name(subject: &str) -> Option<&str> {
     // The extraction logic is intentionally ordered from most specific to most
     // general to avoid false positives.
 
@@ -97,11 +97,11 @@ pub(crate) fn extract_filename_from_subject(subject: &str) -> Option<&str> {
     // Case 1: Filename enclosed in quotes
     // ---------------------------------------------------------------------
     //
-    // Based on SABnzbd’s [`RE_SUBJECT_FILENAME_QUOTES`], but
-    // slightly more relaxed, as used in [`subject_name_extractor`].
+    // Based on SABnzbd’s [`RE_SUBJECT_FILENAME_QUOTES`][0], but
+    // slightly more relaxed, as used in [`subject_name_extractor`][1].
     //
-    // [`RE_SUBJECT_FILENAME_QUOTES`]: https://github.com/sabnzbd/sabnzbd/blob/448c034f79eb0c02c34d0da5e546926d7bec0d61/sabnzbd/misc.py#L90
-    // [`subject_name_extractor`]: https://github.com/sabnzbd/sabnzbd/blob/448c034f79eb0c02c34d0da5e546926d7bec0d61/sabnzbd/misc.py#L1623-L1628
+    // [0]: https://github.com/sabnzbd/sabnzbd/blob/448c034f79eb0c02c34d0da5e546926d7bec0d61/sabnzbd/misc.py#L90
+    // [1]: https://github.com/sabnzbd/sabnzbd/blob/448c034f79eb0c02c34d0da5e546926d7bec0d61/sabnzbd/misc.py#L1623-L1628
     if let Some(start) = subject.find('"')
         && let Some(end) = subject.rfind('"')
     {
@@ -130,10 +130,10 @@ pub(crate) fn extract_filename_from_subject(subject: &str) -> Option<&str> {
     // - chunk: "(1/2401)"
     // - trailing digits: "1720916370"
     if let Some((part, rest)) = split_once_trimmed(subject, "-")
-        && is_multipart_counter(part)
+        && is_counter(part)
         && let Some((filename, rest)) = split_once_trimmed(rest, "yEnc")
         && let Some((chunk, digits)) = split_once_trimmed(rest, " ")
-        && is_multipart_counter(chunk)
+        && is_counter(chunk)
         && is_number(digits)
     {
         let trimmed = filename.trim();
@@ -147,11 +147,11 @@ pub(crate) fn extract_filename_from_subject(subject: &str) -> Option<&str> {
     // ---------------------------------------------------------------------
     //
     // The regex used here is a direct port of SABnzbd’s
-    // [`RE_SUBJECT_BASIC_FILENAME`], as used in
-    // [`subject_name_extractor`].
+    // [`RE_SUBJECT_BASIC_FILENAME`][0], as used in
+    // [`subject_name_extractor`][1].
     //
-    // [`RE_SUBJECT_BASIC_FILENAME`]: https://github.com/sabnzbd/sabnzbd/blob/448c034f79eb0c02c34d0da5e546926d7bec0d61/sabnzbd/misc.py#L91
-    // [`subject_name_extractor`]: https://github.com/sabnzbd/sabnzbd/blob/448c034f79eb0c02c34d0da5e546926d7bec0d61/sabnzbd/misc.py#L1630-L1633
+    // [0]: https://github.com/sabnzbd/sabnzbd/blob/448c034f79eb0c02c34d0da5e546926d7bec0d61/sabnzbd/misc.py#L91
+    // [1]: https://github.com/sabnzbd/sabnzbd/blob/448c034f79eb0c02c34d0da5e546926d7bec0d61/sabnzbd/misc.py#L1630-L1633
     static SABNZBD_SUBJECT_BASIC_FILENAME: LazyLock<Regex> = LazyLock::new(|| {
         Regex::new(r"\b([\w\-+()' .,]+(?:\[[\w\-/+()' .,]*][\w\-+()' .,]*)*\.[A-Za-z0-9]{2,4})\b").unwrap()
     });
@@ -294,29 +294,27 @@ pub(crate) fn is_obfuscated(filestem: &str) -> bool {
     true
 }
 
-/// Extracts a numeric prefix from subjects formatted like "[N/...]".
+/// Extracts the file number from a subject, if present.
 ///
 /// This is used to avoid lexicographic sorting errors when numbers are not
-/// zero-padded (e.g. "[1/...]", "[11/...]", "[2/...]").
+/// zero-padded (e.g. `[1/10]`, `[2/10]`, `[10/10]`).
 ///
-/// Not all subjects include the "[N/...]" pattern, so the original subject is
-/// always returned unchanged and the numeric key may be absent.
+/// Not all subjects include such a number. If no valid `[current/total]` prefix is
+/// found, `None` is returned.
 ///
 /// # Example
 /// Input: "[27/141] - "index.bdmv" yEnc (1/1) 280"
-/// Output: (Some(27), "[27/141] - "index.bdmv" yEnc (1/1) 280")
-pub(crate) fn sort_key_from_subject(subject: &str) -> (Option<u32>, &str) {
-    let num = subject
+/// Output: Some((27, 141))
+pub(crate) fn file_number(subject: &str) -> Option<(u32, u32)> {
+    subject
         .strip_prefix('[')
         .and_then(|s| s.split_once(']'))
         .and_then(|(counter, _)| counter.split_once('/'))
-        .and_then(|(left, right)| {
-            let left = left.parse::<u32>().ok()?;
-            let _ = right.parse::<u32>().ok()?;
-            Some(left)
-        });
-
-    (num, subject)
+        .and_then(|(current, total)| {
+            let current = current.parse::<u32>().ok()?;
+            let total = total.parse::<u32>().ok()?;
+            Some((current, total))
+        })
 }
 
 #[cfg(test)]
@@ -545,7 +543,7 @@ mod tests {
         }
     )]
     fn test_name_stem_extension_extraction(#[case] subject: &str, #[case] expected: NameParts) {
-        let filename = extract_filename_from_subject(subject);
+        let filename = file_name(subject);
         let stem = filename.map(file_stem);
         let extension = filename.and_then(file_extension);
 
@@ -613,19 +611,11 @@ mod tests {
     #[test]
     fn test_sort_key_from_subject() {
         assert_eq!(
-            sort_key_from_subject(r#"[10/141] - "00010.clpi" yEnc (1/1) 1000"#),
-            (Some(10), r#"[10/141] - "00010.clpi" yEnc (1/1) 1000"#)
+            file_number(r#"[10/141] - "00010.clpi" yEnc (1/1) 1000"#),
+            Some((10, 141))
         );
-
-        assert_eq!(
-            sort_key_from_subject(r#""00010.clpi" yEnc (1/1) 1000"#),
-            (None, r#""00010.clpi" yEnc (1/1) 1000"#)
-        );
-
-        assert_eq!(
-            sort_key_from_subject("Here's your file!  abc-mr2a.r01 (1/2)"),
-            (None, "Here's your file!  abc-mr2a.r01 (1/2)")
-        );
+        assert_eq!(file_number(r#""00010.clpi" yEnc (1/1) 1000"#), None);
+        assert_eq!(file_number("Here's your file!  abc-mr2a.r01 (1/2)"), None);
 
         let control = vec![
             r#"[1/141] - "00001.clpi" yEnc (1/1) 24248"#,
@@ -708,8 +698,8 @@ mod tests {
 
         let mut sorted_by = randomized.clone();
         let mut sorted_by_key = randomized.clone();
-        sorted_by.sort_by(|a, b| sort_key_from_subject(a).cmp(&sort_key_from_subject(b)));
-        sorted_by_key.sort_by_key(|s| sort_key_from_subject(s));
+        sorted_by.sort_by(|a, b| file_number(a).cmp(&file_number(b)).then_with(|| a.cmp(b)));
+        sorted_by_key.sort_by_key(|s| file_number(s));
 
         assert_ne!(randomized, control);
         assert_eq!(sorted_by, control);
