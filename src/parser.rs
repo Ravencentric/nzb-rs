@@ -1,30 +1,37 @@
-use std::sync::LazyLock;
-
 use chrono::DateTime;
-use regex::Regex;
 use roxmltree::Document;
 
 use crate::errors::{FileAttributeKind, ParseNzbError};
 use crate::{File, Meta, Segment, subparsers};
 
-pub(crate) fn sanitize_xml(xml: &str) -> &str {
-    // roxmltree doesn't support XML declarations or DOCTYPEs, so we need to remove them.
-    static XML_HEADING_RE: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"^(?i)<\?xml\s+version.*?\?>").unwrap());
-    static XML_DOCTYPE_RE: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"^(?i)<!DOCTYPE.*?>").unwrap());
+/// Removes the leading XML declaration and/or DOCTYPE from the input.
+///
+/// This is intended for use with `roxmltree`, which does not support XML
+/// declarations or DOCTYPEs, and strips those constructs from the beginning
+/// of the document while leaving the rest unchanged.
+pub(crate) fn strip_headers(xml: &str) -> &str {
+    let mut s = xml.trim();
 
-    let mut content = xml.trim();
-    if let Some(found) = XML_HEADING_RE.find(content) {
-        content = &content[found.end()..];
-        content = content.trim_start();
+    // Strip XML declaration: <?xml ... ?>
+    if s.len() >= 5
+        && s[..5].eq_ignore_ascii_case("<?xml")
+        && let Some(end) = s.find("?>")
+    {
+        s = s[end + 2..].trim_start();
     }
-    if let Some(found) = XML_DOCTYPE_RE.find(content) {
-        content = &content[found.end()..];
-        content = content.trim_start();
+
+    // Strip DOCTYPE: <!DOCTYPE ... >
+    if s.len() >= 9
+        && s[..9].eq_ignore_ascii_case("<!DOCTYPE")
+        && let Some(end) = s.find('>')
+    {
+        s = s[end + 1..].trim_start();
     }
-    content
+
+    s
 }
 
-/// Parse the `<meta>...</meta>` field present in an NZB.
+/// Parse the `<meta>...</meta>` fields present in an NZB.
 ///
 /// ```xml
 /// <?xml version="1.0" encoding="iso-8859-1" ?>
@@ -75,7 +82,7 @@ pub(crate) fn parse_metadata(nzb: &Document) -> Meta {
     Meta::new(title, passwords, tags, category)
 }
 
-/// Parses the `<file>...</file>` field present in an NZB.
+/// Parses the `<file>...</file>` fields present in an NZB.
 ///
 /// ```xml
 /// <?xml version="1.0" encoding="iso-8859-1" ?>
@@ -230,6 +237,6 @@ mod tests {
         </nzb>
         "#.trim();
 
-        assert_eq!(sanitize_xml(original), sanitized)
+        assert_eq!(strip_headers(original), sanitized)
     }
 }
