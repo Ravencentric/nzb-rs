@@ -1,5 +1,3 @@
-use roxmltree::Document;
-
 /// Removes the leading XML declaration and/or DOCTYPE from the input.
 ///
 /// This is intended for use with `roxmltree`, which does not support XML
@@ -29,14 +27,15 @@ fn strip_headers(xml: &str) -> &str {
 
 /// Thin wrapper around `roxmltree::Document::parse` that strips unsupported
 /// XML declarations and DOCTYPEs before parsing.
-pub(crate) fn parse_document(xml: &str) -> Result<Document<'_>, roxmltree::Error> {
+pub(crate) fn parse_document(xml: &str) -> Result<roxmltree::Document<'_>, roxmltree::Error> {
     let stripped = strip_headers(xml);
-    Document::parse(stripped)
+    roxmltree::Document::parse(stripped)
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+    use roxmltree::Document;
 
     #[test]
     fn test_strip_headers() {
