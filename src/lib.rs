@@ -3,6 +3,7 @@
 mod errors;
 mod parser;
 mod subparsers;
+mod xml;
 
 use std::fs;
 use std::io::Read;
@@ -16,7 +17,7 @@ use itertools::Itertools;
 use serde::{Deserialize, Serialize};
 
 pub use crate::errors::{FileAttributeKind, ParseNzbError, ParseNzbFileError};
-use crate::parser::{parse_files, parse_metadata, strip_headers};
+use crate::parser::{parse_files, parse_metadata};
 use crate::subparsers::{file_extension, file_name, file_stem, is_obfuscated};
 
 /// Represents optional creator-definable metadata in an NZB.
@@ -220,8 +221,7 @@ impl FromStr for Nzb {
     type Err = ParseNzbError;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        let xml = strip_headers(s);
-        let nzb = roxmltree::Document::parse(xml)?;
+        let nzb = xml::parse_document(s)?;
         let meta = parse_metadata(&nzb);
         let files = parse_files(&nzb)?;
         Ok(Self { meta, files })
