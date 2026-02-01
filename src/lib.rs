@@ -13,16 +13,13 @@ use std::str::FromStr;
 use chrono::{DateTime, Utc};
 use flate2::read::GzDecoder;
 use itertools::Itertools;
-#[cfg(feature = "serde")]
-use serde::{Deserialize, Serialize};
 
 pub use crate::errors::{FileAttributeKind, ParseNzbError, ParseNzbFileError};
 use crate::parser::{parse_files, parse_metadata};
-use crate::subject::{file_extension, file_name, file_stem, is_obfuscated};
 
 /// Represents optional creator-definable metadata in an NZB.
 #[derive(Clone, Debug, Default, PartialEq, Eq, PartialOrd, Ord, Hash)]
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Meta {
     pub title: Option<String>,
     pub passwords: Vec<String>,
@@ -49,7 +46,7 @@ impl Meta {
 
 /// Represents a single segment of a file in an NZB.
 #[derive(Clone, Debug, Default, PartialEq, Eq, PartialOrd, Ord, Hash)]
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Segment {
     /// Size of the segment in bytes.
     pub size: u32,
@@ -72,7 +69,7 @@ impl Segment {
 
 /// Represents a complete file, consisting of segments that make up a file.
 #[derive(Clone, Debug, Default, PartialEq, Eq, PartialOrd, Ord, Hash)]
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct File {
     /// The poster of the file.
     pub poster: String,
@@ -114,21 +111,21 @@ impl File {
     /// May return [`None`] if it fails to extract the name.
     #[must_use]
     pub fn name(&self) -> Option<&str> {
-        file_name(&self.subject)
+        subject::file_name(&self.subject)
     }
 
     /// Base name of the file without it's extension extracted from the [`File::name`].
     /// May return [`None`] if it fails to extract the stem.
     #[must_use]
     pub fn stem(&self) -> Option<&str> {
-        self.name().map(file_stem)
+        self.name().map(subject::file_stem)
     }
 
     ///  Extension of the file extracted from the [`File::name`].
     /// May return [`None`] if it fails to extract the extension.
     #[must_use]
     pub fn extension(&self) -> Option<&str> {
-        self.name().and_then(file_extension)
+        self.name().and_then(subject::file_extension)
     }
 
     /// Return [`true`] if the file has the specified extension, [`false`] otherwise.
@@ -144,72 +141,24 @@ impl File {
     /// Return [`true`] if the file is a `.par2` file, [`false`] otherwise.
     #[must_use]
     pub fn is_par2(&self) -> bool {
-        self.name()
-            // Because the `.par2` extension is 5 ASCII characters long, we can
-            // work on the byte level for minor performance gains.
-            .map(str::as_bytes)
-            .is_some_and(|name| name.len() >= 5 && name[name.len() - 5..].eq_ignore_ascii_case(b".par2"))
+        self.name().is_some_and(subject::is_par2)
     }
 
     /// Return [`true`] if the file is a `.rar` file, [`false`] otherwise.
     #[must_use]
     pub fn is_rar(&self) -> bool {
-        // This is a reimplementation of the RAR file check used in SABnzbd:
-        // https://github.com/sabnzbd/sabnzbd/blob/11ba9ae12ade8c8f2abb42d44ea35efdd361fae5/sabnzbd/nzbstuff.py#L107
-        //
-        // The logic is functionally equivalent, but instead of using regular
-        // expressions, this version relies on direct byte comparisons for better
-        // performance and tries to avoid unnecessary allocations.
-        self.name()
-            // Recognized RAR-related extensions (case-insensitive):
-            //
-            //  - .rar
-            //  - .r00, .r01, .r02, ...
-            //  - .s00, .s01, .s02, ...
-            //  - .t00, .t01, .t02, ...
-            //  - .u00, .u01, .u02, ...
-            //  - .v00, .v01, .v02, ...
-            //
-            // Because all of these extensions are 4 ASCII characters long, we can
-            // work on the byte level for minor performance gains.
-            .map(str::as_bytes)
-            .is_some_and(|name| {
-                const SUFFIX_LEN: usize = 4;
-
-                if name.len() < SUFFIX_LEN {
-                    return false;
-                }
-
-                // Get the last 4 bytes of the filename
-                let suffix = &name[name.len() - SUFFIX_LEN..];
-
-                // Fast path for ".rar"
-                if suffix.eq_ignore_ascii_case(b".rar") {
-                    return true;
-                };
-
-                // Match multi-part RAR volume extensions (".xNN")
-                matches!(
-                    suffix,
-                    [
-                        b'.',                                                                // dot
-                        b'r' | b'R' | b's' | b'S' | b't' | b'T' | b'u' | b'U' | b'v' | b'V', // r, s, t, u, v (case-insensitive)
-                        b'0'..=b'9',                                                         // digit
-                        b'0'..=b'9'                                                          // digit
-                    ]
-                )
-            })
+        self.name().is_some_and(subject::is_rar)
     }
 
     /// Return [`true`] if the file is obfuscated, [`false`] otherwise.
     pub fn is_obfuscated(&self) -> bool {
-        self.stem().is_none_or(is_obfuscated)
+        self.stem().is_none_or(subject::is_obfuscated)
     }
 }
 
 /// Represents an NZB.
 #[derive(Clone, Debug, Default, PartialEq, Eq, PartialOrd, Ord, Hash)]
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Nzb {
     /// Optional creator-definable metadata for the contents of the NZB.
     pub meta: Meta,

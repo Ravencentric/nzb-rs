@@ -202,6 +202,55 @@ pub(crate) fn file_stem(name: &str) -> &str {
     })
 }
 
+/// This is a reimplementation of the RAR file check used in SABnzbd:
+/// https://github.com/sabnzbd/sabnzbd/blob/5b3a8fcd3f8586c00c8d38b45f3d4d65d5bd122a/sabnzbd/filesystem.py#L479
+///
+/// Recognized RAR-related extensions (case-insensitive):
+///
+///  - .rar
+///  - .r00, .r01, .r02, ...
+///  - .s00, .s01, .s02, ...
+///  - .t00, .t01, .t02, ...
+///  - .u00, .u01, .u02, ...
+///  - .v00, .v01, .v02, ...
+///
+/// Because all of these extensions are 4 ASCII characters long, we can
+/// work on the byte level for minor performance gains.
+pub(crate) fn is_rar(name: &str) -> bool {
+    let name = name.as_bytes();
+
+    const SUFFIX_LEN: usize = 4;
+
+    if name.len() < SUFFIX_LEN {
+        return false;
+    }
+
+    // Get the last 4 bytes of the filename
+    let suffix = &name[name.len() - SUFFIX_LEN..];
+
+    // Fast path for ".rar"
+    if suffix.eq_ignore_ascii_case(b".rar") {
+        return true;
+    };
+
+    // Match multi-part RAR volume extensions (".xNN")
+    matches!(
+        suffix,
+        [
+            b'.',                                                                // dot
+            b'r' | b'R' | b's' | b'S' | b't' | b'T' | b'u' | b'U' | b'v' | b'V', // r, s, t, u, v (case-insensitive)
+            b'0'..=b'9',                                                         // digit
+            b'0'..=b'9'                                                          // digit
+        ]
+    )
+}
+
+/// Returns `true` if name ends with a `.par2` extension (case-insensitive).
+pub(crate) fn is_par2(name: &str) -> bool {
+    let name = name.as_bytes();
+    name.len() >= 5 && name[name.len() - 5..].eq_ignore_ascii_case(b".par2")
+}
+
 /// Return `true` if the file stem appears to be obfuscated, `false` otherwise.
 ///
 /// Based on SABnzbd’s [`is_probably_obfuscated`][0].
