@@ -5,10 +5,8 @@ use crate::errors::{FileAttributeKind, ParseNzbError};
 use crate::subject;
 use crate::{File, Meta, Segment};
 
-/// NZB `<meta type="...">` values supported by this parser.
-///
-/// The supported variants correspond to the [`Metadata Defined Types`
-/// in the NZB specification][0].
+/// NZB `<meta type="...">` values defined by the
+/// [`Metadata Defined Types` in the NZB specification][0].
 ///
 /// [0]: https://sabnzbd.org/wiki/extra/nzb-spec
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
