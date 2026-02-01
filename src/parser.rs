@@ -5,6 +5,29 @@ use crate::errors::{FileAttributeKind, ParseNzbError};
 use crate::subject;
 use crate::{File, Meta, Segment};
 
+enum MetaType {
+    Title,
+    Password,
+    Tag,
+    Category,
+}
+
+impl MetaType {
+    fn parse(s: &str) -> Option<Self> {
+        if s.eq_ignore_ascii_case("title") {
+            Some(MetaType::Title)
+        } else if s.eq_ignore_ascii_case("password") {
+            Some(MetaType::Password)
+        } else if s.eq_ignore_ascii_case("tag") {
+            Some(MetaType::Tag)
+        } else if s.eq_ignore_ascii_case("category") {
+            Some(MetaType::Category)
+        } else {
+            None
+        }
+    }
+}
+
 /// Parse the `<meta>...</meta>` fields present in an NZB.
 ///
 /// ```xml
@@ -26,34 +49,34 @@ pub(crate) fn parse_metadata(nzb: &Document) -> Meta {
     let mut category: Option<String> = None;
 
     for meta in nzb.descendants().filter(|n| n.has_tag_name("meta")) {
-        if let Some(typ) = meta.attribute("type").map(str::to_lowercase).as_deref() {
+        if let Some(typ) = meta.attribute("type").and_then(MetaType::parse) {
             match typ {
-                "title" => {
+                MetaType::Title => {
                     title = title.or(meta.text().map(String::from));
                 }
-                "password" => {
-                    if let Some(text) = meta.text().map(String::from)
-                        && !passwords.contains(&text)
-                    {
+                MetaType::Password => {
+                    if let Some(text) = meta.text().map(String::from) {
                         passwords.push(text);
                     }
                 }
-                "tag" => {
-                    if let Some(text) = meta.text().map(String::from)
-                        && !tags.contains(&text)
-                    {
+                MetaType::Tag => {
+                    if let Some(text) = meta.text().map(String::from) {
                         tags.push(text);
                     }
                 }
-                "category" => {
+                MetaType::Category => {
                     category = category.or(meta.text().map(String::from));
                 }
-                _ => {} // Do not error on unknown meta types because the spec specifies that clients should ignore them.
             }
         }
     }
 
-    Meta::new(title, passwords, tags, category)
+    Meta {
+        title,
+        passwords,
+        tags,
+        category,
+    }
 }
 
 /// Parses the `<file>...</file>` fields present in an NZB.
