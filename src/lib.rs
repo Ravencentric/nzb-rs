@@ -2,7 +2,7 @@
 
 mod errors;
 mod parser;
-mod subparsers;
+mod subject;
 mod xml;
 
 use std::fs;
@@ -18,7 +18,7 @@ use serde::{Deserialize, Serialize};
 
 pub use crate::errors::{FileAttributeKind, ParseNzbError, ParseNzbFileError};
 use crate::parser::{parse_files, parse_metadata};
-use crate::subparsers::{file_extension, file_name, file_stem, is_obfuscated};
+use crate::subject::{file_extension, file_name, file_stem, is_obfuscated};
 
 /// Represents optional creator-definable metadata in an NZB.
 #[derive(Clone, Debug, Default, PartialEq, Eq, PartialOrd, Ord, Hash)]

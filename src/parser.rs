@@ -2,7 +2,7 @@ use chrono::DateTime;
 use roxmltree::Document;
 
 use crate::errors::{FileAttributeKind, ParseNzbError};
-use crate::subparsers;
+use crate::subject;
 use crate::{File, Meta, Segment};
 
 /// Parse the `<meta>...</meta>` fields present in an NZB.
@@ -153,8 +153,8 @@ pub(crate) fn parse_files(nzb: &Document) -> Result<Vec<File>, ParseNzbError> {
     }
 
     files.sort_by(|a, b| {
-        let ka = subparsers::file_number(&a.subject);
-        let kb = subparsers::file_number(&b.subject);
+        let ka = subject::file_number(&a.subject);
+        let kb = subject::file_number(&b.subject);
         ka.cmp(&kb).then_with(|| a.subject.cmp(&b.subject))
     });
 

@@ -34,8 +34,9 @@ pub(crate) fn parse_document(xml: &str) -> Result<roxmltree::Document<'_>, roxml
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use roxmltree::Document;
+
+    use super::*;
 
     #[test]
     fn test_strip_headers() {
