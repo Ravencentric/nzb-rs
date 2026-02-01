@@ -657,6 +657,26 @@ mod tests {
         assert!(!is_obfuscated(filestem));
     }
 
+    #[rstest]
+    #[case("a.rar", true)]
+    #[case("a.R00", true)]
+    #[case("a.s12", true)]
+    #[case("a.zip", false)]
+    #[case("a.r0", false)]
+    #[case("", false)]
+    fn test_is_rar(#[case] name: &str, #[case] expected: bool) {
+        assert_eq!(is_rar(name), expected);
+    }
+
+    #[rstest]
+    #[case("a.par2", true)]
+    #[case("A.PAR2", true)]
+    #[case("a.par", false)]
+    #[case("par2", false)]
+    fn test_is_par2(#[case] name: &str, #[case] expected: bool) {
+        assert_eq!(is_par2(name), expected);
+    }
+
     #[test]
     fn test_sort_key_from_subject() {
         assert_eq!(
