@@ -218,7 +218,7 @@ mod tests {
     #[case("PaSsWoRd", MetaType::Password)]
     #[case("TaG", MetaType::Tag)]
     #[case("CATEGORY", MetaType::Category)]
-    fn metatype_parses_supported_types_case_insensitive(#[case] input: &str, #[case] expected: MetaType) {
+    fn test_metatype_parses_supported_types_case_insensitive(#[case] input: &str, #[case] expected: MetaType) {
         assert_eq!(MetaType::parse(input), Some(expected));
     }
 
@@ -227,7 +227,7 @@ mod tests {
     #[case("unknown")]
     #[case("")]
     #[case(" ")]
-    fn metatype_rejects_unknown_types(#[case] input: &str) {
+    fn test_metatype_rejects_unknown_types(#[case] input: &str) {
         assert_eq!(MetaType::parse(input), None);
     }
 
