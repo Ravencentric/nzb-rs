@@ -202,7 +202,9 @@ pub(crate) fn file_stem(name: &str) -> &str {
     })
 }
 
-/// This is a reimplementation of the RAR file check used in SABnzbd:
+/// Returns `true` if name has a recognized RAR-related extension (case-insensitive).
+///
+/// This is a reimplementation of the `RAR_RE` used in SABnzbd:
 /// https://github.com/sabnzbd/sabnzbd/blob/5b3a8fcd3f8586c00c8d38b45f3d4d65d5bd122a/sabnzbd/filesystem.py#L479
 ///
 /// Recognized RAR-related extensions (case-insensitive):
@@ -253,14 +255,9 @@ pub(crate) fn is_par2(name: &str) -> bool {
 
 /// Return `true` if the file stem appears to be obfuscated, `false` otherwise.
 ///
-/// Based on SABnzbd’s [`is_probably_obfuscated`][0].
-///
-/// Differences from the original:
-/// - Expects the file *stem* (basename without extension); no path or extension
-///   handling is performed. Passing anything else yields incorrect results.
-/// - Implemented without regular expressions.
-/// - Intended to produce identical results for equivalent inputs; any deviation
-///   is considered a bug.
+/// Based on SABnzbd’s [`is_probably_obfuscated`][0]. Unlike the original, this
+/// expects only the file stem (basename without extension) and does not handle
+/// paths or extensions, so passing anything else will yield incorrect results.
 ///
 /// [0]: <https://github.com/sabnzbd/sabnzbd/blob/d21a1119932896c1f7fea1b804e99c70f05dbd19/sabnzbd/deobfuscate_filenames.py#L103>
 pub(crate) fn is_obfuscated(filestem: &str) -> bool {
