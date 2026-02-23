@@ -129,10 +129,10 @@ pub(crate) fn parse_files(nzb: &Document) -> Result<Vec<File>, ParseNzbError> {
             match child.tag_name().name() {
                 "groups" => {
                     for group in child.children().filter(|n| n.has_tag_name("group")) {
-                        if let Some(text) = group.text() {
-                            if !text.is_empty() {
-                                groups.push(text.to_owned());
-                            }
+                        if let Some(text) = group.text()
+                            && !text.is_empty()
+                        {
+                            groups.push(text.to_owned());
                         }
                     }
                 }
@@ -140,26 +140,26 @@ pub(crate) fn parse_files(nzb: &Document) -> Result<Vec<File>, ParseNzbError> {
                 "segments" => {
                     for segment in child.children().filter(|n| n.has_tag_name("segment")) {
                         // Message-ID text is required and must be non-empty.
-                        if let Some(message_id) = segment.text() {
-                            if !message_id.is_empty() {
-                                // Article size is typically ~700KB and safely fits in u32.
-                                let Some(size) = segment.attribute("bytes").and_then(|bytes| bytes.parse::<u32>().ok())
-                                else {
-                                    continue;
-                                };
-                                let Some(number) = segment
-                                    .attribute("number")
-                                    .and_then(|number| number.parse::<u32>().ok())
-                                else {
-                                    continue;
-                                };
+                        if let Some(message_id) = segment.text()
+                            && !message_id.is_empty()
+                        {
+                            // Article size is typically ~700KB and safely fits in u32.
+                            let Some(size) = segment.attribute("bytes").and_then(|bytes| bytes.parse::<u32>().ok())
+                            else {
+                                continue;
+                            };
+                            let Some(number) = segment
+                                .attribute("number")
+                                .and_then(|number| number.parse::<u32>().ok())
+                            else {
+                                continue;
+                            };
 
-                                segments.push(Segment {
-                                    size,
-                                    number,
-                                    message_id: message_id.to_owned(),
-                                });
-                            }
+                            segments.push(Segment {
+                                size,
+                                number,
+                                message_id: message_id.to_owned(),
+                            });
                         }
                     }
                 }
