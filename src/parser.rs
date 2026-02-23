@@ -93,103 +93,114 @@ pub(crate) fn parse_metadata(nzb: &Document) -> Meta {
     }
 }
 
-/// Parses the `<file>...</file>` fields present in an NZB.
+/// Parse all `<file>` elements from an NZB Document.
 ///
-/// ```xml
-/// <?xml version="1.0" encoding="iso-8859-1" ?>
-/// <!DOCTYPE nzb PUBLIC "-//newzBin//DTD NZB 1.1//EN" "http://www.newzbin.com/DTD/nzb/nzb-1.1.dtd">
-/// <nzb xmlns="http://www.newzbin.com/DTD/2003/nzb">
-///     <file poster="Joe Bloggs &lt;bloggs@nowhere.example&gt;" date="1071674882" subject="Here's your file!  abc-mr2a.r01 (1/2)">
-///         <groups>[...]</groups>
-///         <segments>[...]</segments>
-///     </file>
-/// </nzb>
-/// ```
+/// Each `<file>` must contain:
+/// - `poster`, `date`, and `subject` attributes
+/// - at least one `<group>` inside `<groups>`
+/// - at least one `<segment>` inside `<segments>`
+///
+/// Segments missing required attributes (`bytes`, `number`) or message IDs
+/// are skipped rather than causing a hard error.
 pub(crate) fn parse_files(nzb: &Document) -> Result<Vec<File>, ParseNzbError> {
     let mut files = Vec::new();
-    let file_nodes = nzb.descendants().filter(|n| n.has_tag_name("file"));
 
-    for node in file_nodes {
-        let poster = node
-            .attribute("poster")
-            .ok_or(ParseNzbError::FileAttribute {
-                attribute: FileAttributeKind::Poster,
-            })?
-            .to_string();
+    for node in nzb.root_element().children().filter(|n| n.has_tag_name("file")) {
+        let poster = node.attribute("poster").ok_or(ParseNzbError::FileAttribute {
+            attribute: FileAttributeKind::Poster,
+        })?;
+
         let posted_at = node
-            .attribute("date")
+            .attribute("date") // Unix timestamp in seconds
             .and_then(|d| d.parse::<i64>().ok())
             .and_then(|d| DateTime::from_timestamp(d, 0))
             .ok_or(ParseNzbError::FileAttribute {
                 attribute: FileAttributeKind::Date,
             })?;
-        let subject = node
-            .attribute("subject")
-            .ok_or(ParseNzbError::FileAttribute {
-                attribute: FileAttributeKind::Subject,
-            })?
-            .to_string();
+
+        let subject = node.attribute("subject").ok_or(ParseNzbError::FileAttribute {
+            attribute: FileAttributeKind::Subject,
+        })?;
 
         let mut groups = Vec::new();
         let mut segments = Vec::new();
 
-        if let Some(children) = node.descendants().find(|n| n.has_tag_name("groups")) {
-            groups.extend(
-                children
-                    .descendants()
-                    .filter(|n| n.has_tag_name("group"))
-                    .filter_map(|group| group.text().filter(|text| !text.is_empty()).map(String::from)),
-            );
+        for child in node.children() {
+            match child.tag_name().name() {
+                "groups" => {
+                    for group in child.children().filter(|n| n.has_tag_name("group")) {
+                        if let Some(text) = group.text() {
+                            if !text.is_empty() {
+                                groups.push(text.to_owned());
+                            }
+                        }
+                    }
+                }
+
+                "segments" => {
+                    for segment in child.children().filter(|n| n.has_tag_name("segment")) {
+                        // Message-ID text is required and must be non-empty.
+                        if let Some(message_id) = segment.text() {
+                            if !message_id.is_empty() {
+                                // Article size is typically ~700KB and safely fits in u32.
+                                let Some(size) = segment.attribute("bytes").and_then(|bytes| bytes.parse::<u32>().ok())
+                                else {
+                                    continue;
+                                };
+                                let Some(number) = segment
+                                    .attribute("number")
+                                    .and_then(|number| number.parse::<u32>().ok())
+                                else {
+                                    continue;
+                                };
+
+                                segments.push(Segment {
+                                    size,
+                                    number,
+                                    message_id: message_id.to_owned(),
+                                });
+                            }
+                        }
+                    }
+                }
+                _ => continue,
+            }
         }
 
-        // There must be at least one group.
+        // A file must belong to at least one group.
         if groups.is_empty() {
             return Err(ParseNzbError::GroupsElement);
+        } else {
+            groups.sort_unstable();
         }
 
-        if let Some(children) = node.descendants().find(|n| n.has_tag_name("segments")) {
-            segments.extend(
-                children
-                    .descendants()
-                    .filter(|n| n.has_tag_name("segment"))
-                    .filter_map(|segment| {
-                        let size = segment.attribute("bytes")?.parse::<u32>().ok()?;
-                        let number = segment.attribute("number")?.parse::<u32>().ok()?;
-                        let message_id = segment.text()?;
-                        Some(Segment::new(size, number, message_id))
-                    }),
-            );
-        }
-
-        // There must be at least one segment.
+        // A file must contain at least one valid segment.
         if segments.is_empty() {
             return Err(ParseNzbError::SegmentsElement);
+        } else {
+            segments.sort_unstable_by_key(|f| f.number);
         }
 
-        // sort for consistency
-        groups.sort();
-        segments.sort_by_key(|f| f.number);
-
         files.push(File {
-            poster,
+            poster: poster.to_owned(),
             posted_at,
-            subject,
+            subject: subject.to_owned(),
             groups,
             segments,
         });
     }
 
-    // There must be at least one file.
+    // The NZB must contain at least one <file>.
     if files.is_empty() {
         return Err(ParseNzbError::FileElement);
     }
 
-    // There must be at least one non-`.par2` file.
+    // Reject NZBs that contain only PAR2 repair files.
     if files.iter().all(File::is_par2) {
         return Err(ParseNzbError::OnlyPar2Files);
     }
 
-    files.sort_by(|a, b| {
+    files.sort_unstable_by(|a, b| {
         let ka = subject::file_number(&a.subject);
         let kb = subject::file_number(&b.subject);
         ka.cmp(&kb).then_with(|| a.subject.cmp(&b.subject))
