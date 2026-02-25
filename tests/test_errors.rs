@@ -39,9 +39,7 @@ fn test_invalid_xml() {
     assert!(nzb.is_err());
     assert_eq!(
         nzb.unwrap_err(),
-        ParseNzbError::XmlSyntax {
-            message: "the root node was opened but never closed".to_string()
-        }
+        ParseNzbError::XmlSyntax("the root node was opened but never closed".to_string())
     )
 }
 
@@ -211,9 +209,7 @@ fn test_file_with_missing_poster() {
     let nzb = Nzb::parse(no_poster);
     assert_eq!(
         nzb.unwrap_err(),
-        ParseNzbError::FileAttribute {
-            attribute: FileAttributeKind::Poster
-        }
+        ParseNzbError::FileAttribute(FileAttributeKind::Poster)
     );
 }
 
@@ -243,12 +239,7 @@ fn test_file_with_bad_date() {
     "#.trim();
 
     let nzb = Nzb::parse(bad_date);
-    assert_eq!(
-        nzb.unwrap_err(),
-        ParseNzbError::FileAttribute {
-            attribute: FileAttributeKind::Date
-        }
-    );
+    assert_eq!(nzb.unwrap_err(), ParseNzbError::FileAttribute(FileAttributeKind::Date));
 }
 
 #[test]
@@ -280,9 +271,7 @@ fn test_file_with_missing_subject() {
     let nzb = Nzb::parse(no_subject);
     assert_eq!(
         nzb.unwrap_err(),
-        ParseNzbError::FileAttribute {
-            attribute: FileAttributeKind::Subject
-        }
+        ParseNzbError::FileAttribute(FileAttributeKind::Subject)
     );
 }
 

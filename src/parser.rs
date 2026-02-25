@@ -106,21 +106,19 @@ pub(crate) fn parse_files(nzb: &Document) -> Result<Vec<File>, ParseNzbError> {
     let mut files = Vec::new();
 
     for node in nzb.root_element().children().filter(|n| n.has_tag_name("file")) {
-        let poster = node.attribute("poster").ok_or(ParseNzbError::FileAttribute {
-            attribute: FileAttributeKind::Poster,
-        })?;
+        let poster = node
+            .attribute("poster")
+            .ok_or(ParseNzbError::FileAttribute(FileAttributeKind::Poster))?;
 
         let posted_at = node
             .attribute("date") // Unix timestamp in seconds
             .and_then(|d| d.parse::<i64>().ok())
             .and_then(|d| DateTime::from_timestamp(d, 0))
-            .ok_or(ParseNzbError::FileAttribute {
-                attribute: FileAttributeKind::Date,
-            })?;
+            .ok_or(ParseNzbError::FileAttribute(FileAttributeKind::Date))?;
 
-        let subject = node.attribute("subject").ok_or(ParseNzbError::FileAttribute {
-            attribute: FileAttributeKind::Subject,
-        })?;
+        let subject = node
+            .attribute("subject")
+            .ok_or(ParseNzbError::FileAttribute(FileAttributeKind::Subject))?;
 
         let mut groups = Vec::new();
         let mut segments = Vec::new();
@@ -170,16 +168,16 @@ pub(crate) fn parse_files(nzb: &Document) -> Result<Vec<File>, ParseNzbError> {
         // A file must belong to at least one group.
         if groups.is_empty() {
             return Err(ParseNzbError::GroupsElement);
-        } else {
-            groups.sort_unstable();
         }
 
         // A file must contain at least one valid segment.
         if segments.is_empty() {
             return Err(ParseNzbError::SegmentsElement);
-        } else {
-            segments.sort_unstable_by_key(|f| f.number);
         }
+
+        // Sort for consistency
+        groups.sort_unstable();
+        segments.sort_unstable_by_key(|segment| segment.number);
 
         files.push(File {
             poster: poster.to_owned(),

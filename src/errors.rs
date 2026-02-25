@@ -56,26 +56,20 @@ pub enum ParseNzbError {
     OnlyPar2Files,
 
     /// Indicates an invalid or missing required attribute in a 'file' element.
-    #[error("Invalid or missing required attribute '{attribute}' in a 'file' element.")]
-    FileAttribute {
-        /// The attribute that was invalid or missing.
-        attribute: FileAttributeKind,
-    },
+    #[error("Invalid or missing required attribute '{0}' in a 'file' element.")]
+    FileAttribute(FileAttributeKind),
 
     /// Indicates that the NZB document is not valid XML and could not be parsed.
-    #[error("The NZB document is not valid XML and could not be parsed: {message}")]
-    XmlSyntax {
-        /// The error message provided by the underlying XML parsing library
-        /// ([`roxmltree`](https://crates.io/crates/roxmltree) in this case).
-        message: String,
-    },
+    ///
+    /// The contained string is the error message provided by the underlying
+    /// XML parsing library ([`roxmltree`](https://crates.io/crates/roxmltree) in this case).
+    #[error("The NZB document is not valid XML and could not be parsed: {0}")]
+    XmlSyntax(String),
 }
 
 impl From<roxmltree::Error> for ParseNzbError {
     fn from(error: roxmltree::Error) -> Self {
-        ParseNzbError::XmlSyntax {
-            message: error.to_string(),
-        }
+        ParseNzbError::XmlSyntax(error.to_string())
     }
 }
 
