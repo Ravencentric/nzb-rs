@@ -5,6 +5,7 @@ mod parser;
 mod subject;
 mod xml;
 
+use std::collections::BTreeSet;
 use std::fs;
 use std::io::Read;
 use std::path::Path;
@@ -12,7 +13,6 @@ use std::str::FromStr;
 
 use chrono::{DateTime, Utc};
 use flate2::read::GzDecoder;
-use itertools::Itertools;
 
 pub use crate::errors::{FileAttributeKind, ParseNzbError, ParseNzbFileError};
 use crate::parser::{parse_files, parse_metadata};
@@ -21,14 +21,15 @@ use crate::parser::{parse_files, parse_metadata};
 #[derive(Clone, Debug, Default, PartialEq, Eq, PartialOrd, Ord, Hash)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Meta {
-    pub title: Option<String>,
-    pub passwords: Vec<String>,
-    pub tags: Vec<String>,
-    pub category: Option<String>,
+    title: Option<String>,
+    passwords: Vec<String>,
+    tags: Vec<String>,
+    category: Option<String>,
 }
 
 impl Meta {
-    /// Creates a new `Meta` instance.
+    /// Creates a new [`Meta`] instance.
+    #[must_use]
     pub fn new(
         title: Option<impl Into<String>>,
         passwords: impl IntoIterator<Item = impl Into<String>>,
@@ -42,49 +43,85 @@ impl Meta {
             category: category.map(Into::into),
         }
     }
+
+    /// Human-readable title associated with the NZB.
+    #[must_use]
+    pub fn title(&self) -> Option<&str> {
+        self.title.as_deref()
+    }
+
+    /// Password entries associated with the NZB.
+    #[must_use]
+    pub fn passwords(&self) -> &[String] {
+        &self.passwords
+    }
+
+    /// Tags associated with the NZB.
+    #[must_use]
+    pub fn tags(&self) -> &[String] {
+        &self.tags
+    }
+
+    /// Category associated with the NZB.
+    #[must_use]
+    pub fn category(&self) -> Option<&str> {
+        self.category.as_deref()
+    }
 }
 
 /// Represents a single segment of a file in an NZB.
 #[derive(Clone, Debug, Default, PartialEq, Eq, PartialOrd, Ord, Hash)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Segment {
-    /// Size of the segment in bytes.
-    pub size: u32,
-    /// Number of the segment.
-    pub number: u32,
-    /// Message ID of the segment.
-    pub message_id: String,
+    size: u32,
+    number: u32,
+    message_id: String,
 }
 
 impl Segment {
-    /// Creates a new `Segment` instance.
-    pub fn new(size: impl Into<u32>, number: impl Into<u32>, message_id: impl Into<String>) -> Self {
+    /// Creates a new [`Segment`] instance.
+    #[must_use]
+    pub fn new(size: u32, number: u32, message_id: impl Into<String>) -> Self {
         Self {
-            size: size.into(),
-            number: number.into(),
+            size,
+            number,
             message_id: message_id.into(),
         }
     }
+
+    /// Size of the segment in bytes.
+    #[must_use]
+    pub fn size(&self) -> &u32 {
+        &self.size
+    }
+
+    /// Sequence number of the segment within the file.
+    #[must_use]
+    pub fn number(&self) -> &u32 {
+        &self.number
+    }
+
+    /// `Message-ID` of the segment.
+    #[must_use]
+    pub fn message_id(&self) -> &str {
+        &self.message_id
+    }
 }
 
-/// Represents a complete file, consisting of segments that make up a file.
+/// Represents a single file, consisting of segments that make up a file.
 #[derive(Clone, Debug, Default, PartialEq, Eq, PartialOrd, Ord, Hash)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct File {
-    /// The poster of the file.
-    pub poster: String,
-    /// The date and time when the file was posted, in UTC.
-    pub posted_at: DateTime<Utc>,
-    /// The subject of the file.
-    pub subject: String,
-    /// Groups that reference the file.
-    pub groups: Vec<String>,
-    /// Segments that make up the file.
-    pub segments: Vec<Segment>,
+    poster: String,
+    posted_at: DateTime<Utc>,
+    subject: String,
+    groups: Vec<String>,
+    segments: Vec<Segment>,
 }
 
 impl File {
-    /// Creates a new `File` instance.
+    /// Creates a new [`File`] instance.
+    #[must_use]
     pub fn new(
         poster: impl Into<String>,
         posted_at: impl Into<DateTime<Utc>>,
@@ -99,6 +136,36 @@ impl File {
             groups: groups.into_iter().map(Into::into).collect(),
             segments: segments.into_iter().collect(),
         }
+    }
+
+    /// Poster of the file.
+    #[must_use]
+    pub fn poster(&self) -> &str {
+        &self.poster
+    }
+
+    /// Date and time the file was posted, in UTC.
+    #[must_use]
+    pub fn posted_at(&self) -> &DateTime<Utc> {
+        &self.posted_at
+    }
+
+    /// Subject associated with the file.
+    #[must_use]
+    pub fn subject(&self) -> &str {
+        &self.subject
+    }
+
+    /// Usenet groups listed for the file.
+    #[must_use]
+    pub fn groups(&self) -> &[String] {
+        &self.groups
+    }
+
+    /// Segments that make up the file.
+    #[must_use]
+    pub fn segments(&self) -> &[Segment] {
+        &self.segments
     }
 
     /// Size of the file calculated from the sum of segment sizes.
@@ -160,10 +227,8 @@ impl File {
 #[derive(Clone, Debug, Default, PartialEq, Eq, PartialOrd, Ord, Hash)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Nzb {
-    /// Optional creator-definable metadata for the contents of the NZB.
-    pub meta: Meta,
-    /// File objects representing the files included in the NZB.
-    pub files: Vec<File>,
+    meta: Meta,
+    files: Vec<File>,
 }
 
 impl FromStr for Nzb {
@@ -256,6 +321,17 @@ impl Nzb {
 
         Ok(Self::parse(content)?)
     }
+    /// Optional creator-definable metadata for the contents of the NZB.
+    #[must_use]
+    pub fn meta(&self) -> &Meta {
+        &self.meta
+    }
+
+    /// File objects representing the files included in the NZB.
+    #[must_use]
+    pub fn files(&self) -> &[File] {
+        &self.files
+    }
 
     /// The main content file (episode, movie, etc) in the NZB.
     /// This is determined by finding the largest non `par2` file in the NZB
@@ -277,32 +353,35 @@ impl Nzb {
     }
 
     /// Vector of unique file names across all the files in the NZB.
-    #[must_use]
-    pub fn filenames(&self) -> Vec<&str> {
-        self.files.iter().filter_map(|f| f.name()).unique().sorted().collect()
+    pub fn filenames(&self) -> impl Iterator<Item = &str> {
+        self.files
+            .iter()
+            .filter_map(|f| f.name())
+            .collect::<BTreeSet<_>>()
+            .into_iter()
     }
 
     /// Vector of unique posters across all the files in the NZB.
-    #[must_use]
-    pub fn posters(&self) -> Vec<&str> {
-        self.files.iter().map(|f| f.poster.as_str()).unique().sorted().collect()
+    pub fn posters(&self) -> impl Iterator<Item = &str> {
+        self.files
+            .iter()
+            .map(|f| f.poster.as_str())
+            .collect::<BTreeSet<_>>()
+            .into_iter()
     }
 
     /// Vector of unique groups across all the files in the NZB.
-    #[must_use]
-    pub fn groups(&self) -> Vec<&str> {
+    pub fn groups(&self) -> impl Iterator<Item = &str> {
         self.files
             .iter()
             .flat_map(|f| f.groups.iter().map(String::as_str))
-            .unique()
-            .sorted()
-            .collect()
+            .collect::<BTreeSet<_>>()
+            .into_iter()
     }
 
     /// Vector of `.par2` files in the NZB.
-    #[must_use]
-    pub fn par2_files(&self) -> Vec<&File> {
-        self.files.iter().filter(|f| f.is_par2()).collect()
+    pub fn par2_files(&self) -> impl Iterator<Item = &File> {
+        self.files.iter().filter(|f| f.is_par2())
     }
 
     /// Total size of all the `.par2` files.

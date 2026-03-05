@@ -209,9 +209,10 @@ pub(crate) fn parse_files(nzb: &Document) -> Result<Vec<File>, ParseNzbError> {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use roxmltree::Document;
     use rstest::rstest;
+
+    use super::*;
 
     fn parse_metadata_from_xml(xml: &str) -> Meta {
         let doc = Document::parse(xml.trim()).expect("valid XML");
