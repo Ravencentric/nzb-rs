@@ -44,7 +44,7 @@ fn main() -> Result<(), ParseNzbError> {
         "#;
     let nzb = Nzb::parse(xml)?;
     println!("{:#?}", nzb);
-    assert_eq!(nzb.file().name(), Some("Big Buck Bunny - S01E01.mkv"));
+    assert_eq!(nzb.primary().name(), Some("Big Buck Bunny - S01E01.mkv"));
     Ok(())
 }
 ```

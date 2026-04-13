@@ -2,8 +2,9 @@ use chrono::DateTime;
 use roxmltree::Document;
 
 use crate::errors::{FileAttributeKind, ParseNzbError};
+use crate::files::ParityFiles;
 use crate::subject;
-use crate::{File, Segment};
+use crate::{File, Files, Segment};
 
 /// Parse all `<file>` elements from an NZB Document.
 ///
@@ -14,7 +15,7 @@ use crate::{File, Segment};
 ///
 /// Segments missing required attributes (`bytes`, `number`) or message IDs
 /// are skipped rather than causing a hard error.
-pub(crate) fn parse_files(nzb: &Document) -> Result<Vec<File>, ParseNzbError> {
+pub(crate) fn parse_files(nzb: &Document) -> Result<(Files, ParityFiles), ParseNzbError> {
     let mut files = Vec::new();
 
     for node in nzb.root_element().children().filter(|n| n.has_tag_name("file")) {
@@ -90,21 +91,21 @@ pub(crate) fn parse_files(nzb: &Document) -> Result<Vec<File>, ParseNzbError> {
         files.push(File::new(poster, posted_at, subject, groups, segments));
     }
 
-    // The NZB must contain at least one <file>.
-    if files.is_empty() {
-        return Err(ParseNzbError::FileElement);
-    }
-
-    // Reject NZBs that contain only PAR2 repair files.
-    if files.iter().all(File::is_par2) {
-        return Err(ParseNzbError::OnlyPar2Files);
-    }
-
     files.sort_unstable_by(|a, b| {
         let ka = subject::file_number(a.subject());
         let kb = subject::file_number(b.subject());
         ka.cmp(&kb).then_with(|| a.subject().cmp(b.subject()))
     });
 
-    Ok(files)
+    if files.is_empty() {
+        return Err(ParseNzbError::FileElement);
+    }
+
+    let (payload, parity): (Vec<_>, Vec<_>) = files.into_iter().partition(|file| !file.is_par2());
+
+    if payload.is_empty() {
+        return Err(ParseNzbError::OnlyPar2Files);
+    }
+
+    Ok((Files::from_payload_vec(payload)?, ParityFiles::from_vec(parity)))
 }

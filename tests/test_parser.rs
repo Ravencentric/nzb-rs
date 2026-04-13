@@ -21,33 +21,33 @@ fn test_spec_example(#[case] nzb_file: PathBuf) {
     assert_eq!(nzb.meta().passwords(), vec!["secret"]);
     assert_eq!(nzb.meta().tags(), vec!["HD"]);
     assert_eq!(nzb.meta().category(), Some("TV"));
-    assert_eq!(nzb.files().len(), 1);
+    assert_eq!(nzb.files().count().get(), 1);
     assert!(nzb.is_rar());
     assert!(nzb.is_obfuscated());
-    assert_eq!(nzb.file().name(), Some("abc-mr2a.r01"));
-    assert_eq!(nzb.file().stem(), Some("abc-mr2a"));
-    assert_eq!(nzb.file().extension(), Some("r01"));
-    assert!(nzb.file().has_extension("r01"));
-    assert!(nzb.file().has_extension(".R01"));
-    assert!(!nzb.file().has_extension("..r01"));
+    assert_eq!(nzb.primary().name(), Some("abc-mr2a.r01"));
+    assert_eq!(nzb.primary().stem(), Some("abc-mr2a"));
+    assert_eq!(nzb.primary().extension(), Some("r01"));
+    assert!(nzb.primary().has_extension("r01"));
+    assert!(nzb.primary().has_extension(".R01"));
+    assert!(!nzb.primary().has_extension("..r01"));
     assert!(nzb.has_extension("r01"));
     assert!(nzb.has_extension(".R01"));
     assert!(!nzb.has_extension("..r01"));
     assert_eq!(
-        nzb.file().posted_at(),
+        nzb.primary().posted_at(),
         &DateTime::from_timestamp(1071674882, 0).unwrap()
     );
     assert_eq!(nzb.size(), 106_895);
-    assert_eq!(nzb.files()[0].segments().len(), 2);
+    assert_eq!(nzb.primary().segments().len(), 2);
     assert_eq!(
-        nzb.files()[0].segments(),
+        nzb.primary().segments(),
         [
             Segment::new(102_394, 1, "123456789abcdef@news.newzbin.com"),
             Segment::new(4_501, 2, "987654321fedbca@news.newzbin.com"),
         ]
     );
     assert_eq!(
-        nzb.files()[0].groups(),
+        nzb.primary().groups(),
         ["alt.binaries.mojo".to_string(), "alt.binaries.newzbin".to_string()]
     );
 }
@@ -62,38 +62,32 @@ fn test_big_buck_bunny(#[case] nzb_file: PathBuf) {
     assert!(nzb.meta().tags().is_empty());
     assert_eq!(nzb.meta().category(), None);
 
-    assert_eq!(nzb.files().len(), 5);
+    assert_eq!(nzb.files().count().get(), 1);
     assert!(!nzb.is_rar());
     assert!(!nzb.is_obfuscated());
-    assert!(nzb.has_par2());
+    assert!(nzb.parity().any());
     assert_eq!(nzb.size(), 22_704_889);
-    assert_eq!(nzb.file().name(), Some("Big Buck Bunny - S01E01.mkv"));
-    assert_eq!(nzb.file().stem(), Some("Big Buck Bunny - S01E01"));
-    assert_eq!(nzb.file().extension(), Some("mkv"));
-    assert!(nzb.file().has_extension("mkv"));
-    assert!(nzb.file().has_extension(".MKv"));
-    assert!(!nzb.file().has_extension("..MKv"));
+    assert_eq!(nzb.primary().name(), Some("Big Buck Bunny - S01E01.mkv"));
+    assert_eq!(nzb.primary().stem(), Some("Big Buck Bunny - S01E01"));
+    assert_eq!(nzb.primary().extension(), Some("mkv"));
+    assert!(nzb.primary().has_extension("mkv"));
+    assert!(nzb.primary().has_extension(".MKv"));
+    assert!(!nzb.primary().has_extension("..MKv"));
     assert!(nzb.has_extension("mkv"));
     assert!(nzb.has_extension(".MKv"));
     assert!(!nzb.has_extension("..MKv"));
     assert_eq!(
-        nzb.file().posted_at(),
+        nzb.primary().posted_at(),
         &DateTime::from_timestamp(1706440708, 0).unwrap()
     );
 
     assert_eq!(
         nzb.files().iter().map(|f| f.subject()).collect::<Vec<_>>(),
-        vec![
-            "[1/5] - \"Big Buck Bunny - S01E01.mkv\" yEnc (1/24) 16981056",
-            "[2/5] - \"Big Buck Bunny - S01E01.mkv.par2\" yEnc (1/1) 920",
-            "[3/5] - \"Big Buck Bunny - S01E01.mkv.vol00+01.par2\" yEnc (1/2) 717788",
-            "[4/5] - \"Big Buck Bunny - S01E01.mkv.vol01+02.par2\" yEnc (1/3) 1434656",
-            "[5/5] - \"Big Buck Bunny - S01E01.mkv.vol03+04.par2\" yEnc (1/5) 2869192"
-        ]
+        vec!["[1/5] - \"Big Buck Bunny - S01E01.mkv\" yEnc (1/24) 16981056"]
     );
 
     assert_eq!(
-        nzb.par2_files().map(|f| f.subject()).collect::<Vec<_>>(),
+        nzb.parity().iter().map(|f| f.subject()).collect::<Vec<_>>(),
         vec![
             "[2/5] - \"Big Buck Bunny - S01E01.mkv.par2\" yEnc (1/1) 920",
             "[3/5] - \"Big Buck Bunny - S01E01.mkv.vol00+01.par2\" yEnc (1/2) 717788",
@@ -103,7 +97,7 @@ fn test_big_buck_bunny(#[case] nzb_file: PathBuf) {
     );
 
     assert_eq!(
-        nzb.filenames().collect::<Vec<_>>(),
+        nzb.names().collect::<Vec<_>>(),
         vec![
             "Big Buck Bunny - S01E01.mkv",
             "Big Buck Bunny - S01E01.mkv.par2",
@@ -114,10 +108,10 @@ fn test_big_buck_bunny(#[case] nzb_file: PathBuf) {
     );
     assert_eq!(nzb.posters().collect::<Vec<_>>(), vec!["John <nzb@nowhere.example>"]);
     assert_eq!(nzb.groups().collect::<Vec<_>>(), vec!["alt.binaries.boneless"]);
-    assert_eq!(nzb.par2_size(), 5_183_128);
-    assert_eq!(nzb.par2_percentage().floor(), 22.0);
+    assert_eq!(nzb.parity().size(), 5_183_128);
+    assert_eq!(nzb.parity().percentage().floor(), 22.0);
     assert_eq!(
-        nzb.file(),
+        nzb.primary(),
         &File::new(
             "John <nzb@nowhere.example>",
             DateTime::from_timestamp(1706440708, 0).unwrap(),
@@ -164,27 +158,27 @@ fn test_valid_nzb_with_bad_segments(#[case] nzb_file: PathBuf) {
     assert!(nzb.meta().tags().is_empty());
     assert_eq!(nzb.meta().category(), None);
 
-    assert_eq!(nzb.files().len(), 5);
+    assert_eq!(nzb.files().count().get(), 1);
     assert!(!nzb.is_rar());
     assert!(!nzb.is_obfuscated());
-    assert!(nzb.has_par2());
+    assert!(nzb.parity().any());
     assert_eq!(nzb.size(), 20485917);
-    assert_eq!(nzb.file().name(), Some("Big Buck Bunny - S01E01.mkv"));
-    assert_eq!(nzb.file().stem(), Some("Big Buck Bunny - S01E01"));
-    assert_eq!(nzb.file().extension(), Some("mkv"));
-    assert!(nzb.file().has_extension("mkv"));
-    assert!(nzb.file().has_extension(".MKv"));
-    assert!(!nzb.file().has_extension("..MKv"));
+    assert_eq!(nzb.primary().name(), Some("Big Buck Bunny - S01E01.mkv"));
+    assert_eq!(nzb.primary().stem(), Some("Big Buck Bunny - S01E01"));
+    assert_eq!(nzb.primary().extension(), Some("mkv"));
+    assert!(nzb.primary().has_extension("mkv"));
+    assert!(nzb.primary().has_extension(".MKv"));
+    assert!(!nzb.primary().has_extension("..MKv"));
     assert!(nzb.has_extension("mkv"));
     assert!(nzb.has_extension(".MKv"));
     assert!(!nzb.has_extension("..MKv"));
     assert_eq!(
-        nzb.file().posted_at(),
+        nzb.primary().posted_at(),
         &DateTime::from_timestamp(1706440708, 0).unwrap()
     );
 
     assert_eq!(
-        nzb.par2_files().map(|f| f.subject()).collect::<Vec<_>>(),
+        nzb.parity().iter().map(|f| f.subject()).collect::<Vec<_>>(),
         vec![
             "[2/5] - \"Big Buck Bunny - S01E01.mkv.par2\" yEnc (1/1) 920",
             "[3/5] - \"Big Buck Bunny - S01E01.mkv.vol00+01.par2\" yEnc (1/2) 717788",
@@ -194,7 +188,7 @@ fn test_valid_nzb_with_bad_segments(#[case] nzb_file: PathBuf) {
     );
 
     assert_eq!(
-        nzb.filenames().collect::<Vec<_>>(),
+        nzb.names().collect::<Vec<_>>(),
         vec![
             "Big Buck Bunny - S01E01.mkv",
             "Big Buck Bunny - S01E01.mkv.par2",
@@ -205,10 +199,10 @@ fn test_valid_nzb_with_bad_segments(#[case] nzb_file: PathBuf) {
     );
     assert_eq!(nzb.posters().collect::<Vec<_>>(), vec!["John <nzb@nowhere.example>"]);
     assert_eq!(nzb.groups().collect::<Vec<_>>(), vec!["alt.binaries.boneless"]);
-    assert_eq!(nzb.par2_size(), 5_183_128);
-    assert_eq!(nzb.par2_percentage().floor(), 25.0);
+    assert_eq!(nzb.parity().size(), 5_183_128);
+    assert_eq!(nzb.parity().percentage().floor(), 25.0);
     assert_eq!(
-        nzb.file(),
+        nzb.primary(),
         &File::new(
             "John <nzb@nowhere.example>",
             DateTime::from_timestamp(1706440708, 0).unwrap(),
@@ -262,16 +256,16 @@ fn test_standard_ish_subject_with_no_quotes() {
     "#).unwrap();
 
     assert_eq!(
-        nzb.file().name(),
+        nzb.primary().name(),
         Some("[AC-FFF] Highschool DxD BorN - 02 [BD][1080p-Hi10p] FLAC][Dual-Audio][442E5446].mkv")
     );
     assert_eq!(
-        nzb.file().stem(),
+        nzb.primary().stem(),
         Some("[AC-FFF] Highschool DxD BorN - 02 [BD][1080p-Hi10p] FLAC][Dual-Audio][442E5446]")
     );
-    assert_eq!(nzb.file().extension(), Some("mkv"));
-    assert!(!nzb.file().is_par2());
-    assert!(!nzb.file().is_rar());
+    assert_eq!(nzb.primary().extension(), Some("mkv"));
+    assert!(!nzb.primary().is_par2());
+    assert!(!nzb.primary().is_rar());
 }
 
 #[test]
@@ -293,16 +287,16 @@ fn test_subsplease_nagataro_subject_with_no_quotes() {
     "#).unwrap();
 
     assert_eq!(
-        nzb.file().name(),
+        nzb.primary().name(),
         Some("[SubsPlease] Ijiranaide, Nagatoro-san - 02 (1080p) [6E8E8065].mkv")
     );
     assert_eq!(
-        nzb.file().stem(),
+        nzb.primary().stem(),
         Some("[SubsPlease] Ijiranaide, Nagatoro-san - 02 (1080p) [6E8E8065]")
     );
-    assert_eq!(nzb.file().extension(), Some("mkv"));
-    assert!(!nzb.file().is_par2());
-    assert!(!nzb.file().is_rar());
+    assert_eq!(nzb.primary().extension(), Some("mkv"));
+    assert!(!nzb.primary().is_par2());
+    assert!(!nzb.primary().is_rar());
 }
 
 #[test]
@@ -310,13 +304,13 @@ fn test_bad_subject() {
     let file = get_file("bad_subject.nzb");
     let nzb = Nzb::parse_file(file).unwrap();
 
-    assert_eq!(nzb.file().name(), None);
-    assert_eq!(nzb.file().stem(), None);
-    assert_eq!(nzb.file().extension(), None);
-    assert!(!nzb.file().is_par2());
-    assert!(!nzb.file().is_rar());
+    assert_eq!(nzb.primary().name(), None);
+    assert_eq!(nzb.primary().stem(), None);
+    assert_eq!(nzb.primary().extension(), None);
+    assert!(!nzb.primary().is_par2());
+    assert!(!nzb.primary().is_rar());
     assert!(!nzb.is_rar());
-    assert!(!nzb.has_par2());
+    assert!(!nzb.parity().any());
     assert!(nzb.is_obfuscated());
 }
 
@@ -371,7 +365,7 @@ fn test_one_rar_file() {
 
     assert!(nzb.has_rar());
     assert!(!nzb.is_rar());
-    assert!(!nzb.has_par2());
+    assert!(!nzb.parity().any());
 }
 
 #[test]
@@ -381,5 +375,5 @@ fn test_multi_rar() {
 
     assert!(nzb.has_rar());
     assert!(nzb.is_rar());
-    assert!(!nzb.has_par2());
+    assert!(!nzb.parity().any());
 }
