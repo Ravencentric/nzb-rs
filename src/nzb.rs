@@ -1,4 +1,3 @@
-use std::collections::BTreeSet;
 use std::fs;
 use std::io::Read;
 use std::path::Path;
@@ -8,8 +7,9 @@ use flate2::read::GzDecoder;
 
 use crate::errors::{ParseNzbError, ParseNzbFileError};
 use crate::file::File;
-use crate::files::{Files, Parity, ParityFiles};
+use crate::files::Files;
 use crate::meta::Meta;
+use crate::parity::Parity;
 use crate::parser::parse_files;
 use crate::xml;
 
@@ -19,7 +19,7 @@ use crate::xml;
 pub struct Nzb {
     meta: Meta,
     files: Files,
-    parity: ParityFiles,
+    parity: Parity,
 }
 
 impl FromStr for Nzb {
@@ -65,8 +65,10 @@ impl Nzb {
     ///         </nzb>
     ///         "#;
     ///     let nzb = Nzb::parse(xml)?;
-    ///     println!("{:#?}", nzb);
     ///     assert_eq!(nzb.primary().name(), Some("Big Buck Bunny - S01E01.mkv"));
+    ///     assert_eq!(nzb.files().len(), 1);
+    ///     assert_eq!(nzb.files().size(), 1_478_616);
+    ///     assert!(nzb.parity().is_empty());
     ///     Ok(())
     /// }
     /// ```
@@ -90,8 +92,10 @@ impl Nzb {
     ///
     /// fn main() -> Result<(), ParseNzbFileError> {
     ///     let nzb = Nzb::parse_file("tests/nzbs/big_buck_bunny.nzb")?;
-    ///     println!("{:#?}", nzb);
     ///     assert_eq!(nzb.primary().name(), Some("Big Buck Bunny - S01E01.mkv"));
+    ///     assert_eq!(nzb.files().len(), 1);
+    ///     assert_eq!(nzb.files().size(), 17_521_761);
+    ///     assert_eq!(nzb.parity().len(), 4);
     ///     Ok(())
     /// }
     /// ```
@@ -118,9 +122,9 @@ impl Nzb {
         &self.meta
     }
 
-    /// Read-only payload file collection for the NZB.
+    /// Read-only collection of non-`.par2` files contained in the NZB.
     ///
-    /// This collection is guaranteed to contain at least one non-parity file.
+    /// This collection is guaranteed to contain at least one file.
     #[must_use]
     pub fn files(&self) -> &Files {
         &self.files
@@ -134,75 +138,11 @@ impl Nzb {
         self.files.primary()
     }
 
-    /// Total size of all the files in the NZB.
-    #[must_use]
-    pub fn size(&self) -> u64 {
-        self.files.size() + self.parity.size()
-    }
-
-    /// Unique file names across all the files in the NZB.
-    pub fn names(&self) -> impl Iterator<Item = &str> {
-        self.files
-            .iter()
-            .chain(self.parity.iter())
-            .filter_map(|f| f.name())
-            .collect::<BTreeSet<_>>()
-            .into_iter()
-    }
-
-    /// Unique posters across all the files in the NZB.
-    pub fn posters(&self) -> impl Iterator<Item = &str> {
-        self.files
-            .iter()
-            .chain(self.parity.iter())
-            .map(|f| f.poster())
-            .collect::<BTreeSet<_>>()
-            .into_iter()
-    }
-
-    /// Unique groups across all the files in the NZB.
-    pub fn groups(&self) -> impl Iterator<Item = &str> {
-        self.files
-            .iter()
-            .chain(self.parity.iter())
-            .flat_map(|f| f.groups().iter().map(String::as_str))
-            .collect::<BTreeSet<_>>()
-            .into_iter()
-    }
-
-    /// Read-only parity file collection for the NZB.
-    #[must_use]
-    pub fn parity(&self) -> Parity<'_> {
-        let parity_size = self.parity.size();
-        Parity::new(&self.parity, self.files.size() + parity_size)
-    }
-
-    /// Return [`true`] if any file in the NZB has the specified extension, [`false`] otherwise.
+    /// Read-only collection of `.par2` files contained in the NZB.
     ///
-    /// This method ensures consistent extension comparison
-    /// by normalizing the extension (removing any leading dot) and handling case-folding.
-    pub fn has_extension(&self, ext: impl AsRef<str>) -> bool {
-        self.files
-            .iter()
-            .chain(self.parity.iter())
-            .any(|f| f.has_extension(ext.as_ref()))
-    }
-
-    /// Return [`true`] if any file in the NZB is a `.rar` file, [`false`] otherwise.
+    /// This collection may be empty.
     #[must_use]
-    pub fn has_rar(&self) -> bool {
-        self.files.iter().chain(self.parity.iter()).any(File::is_rar)
-    }
-
-    /// Return [`true`] if every file in the NZB is a `.rar` file, [`false`] otherwise.
-    #[must_use]
-    pub fn is_rar(&self) -> bool {
-        self.files.iter().chain(self.parity.iter()).all(File::is_rar)
-    }
-
-    /// Return [`true`] if any file in the NZB is obfuscated, [`false`] otherwise.
-    #[must_use]
-    pub fn is_obfuscated(&self) -> bool {
-        self.files.iter().chain(self.parity.iter()).any(File::is_obfuscated)
+    pub fn parity(&self) -> &Parity {
+        &self.parity
     }
 }

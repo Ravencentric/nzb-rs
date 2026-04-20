@@ -8,6 +8,9 @@ nzb-rs
 
 `nzb-rs` is a [spec](https://sabnzbd.org/wiki/extra/nzb-spec) compliant parser for [NZB](https://en.wikipedia.org/wiki/NZB) files.
 
+`Nzb::files()` returns the non-`.par2` files in the NZB and is guaranteed to be
+non-empty. `Nzb::parity()` returns the `.par2` files and may be empty.
+
 ## Installation
 
 `nzb-rs` is available on [crates.io](https://crates.io/crates/nzb-rs), so you can simply use [cargo](https://github.com/rust-lang/cargo) to install it.
@@ -43,8 +46,10 @@ fn main() -> Result<(), ParseNzbError> {
         </nzb>
         "#;
     let nzb = Nzb::parse(xml)?;
-    println!("{:#?}", nzb);
     assert_eq!(nzb.primary().name(), Some("Big Buck Bunny - S01E01.mkv"));
+    assert_eq!(nzb.files().len(), 1);
+    assert_eq!(nzb.files().size(), 1_478_616);
+    assert!(nzb.parity().is_empty());
     Ok(())
 }
 ```

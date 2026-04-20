@@ -2,7 +2,7 @@ use chrono::DateTime;
 use roxmltree::Document;
 
 use crate::errors::{FileAttributeKind, ParseNzbError};
-use crate::files::ParityFiles;
+use crate::parity::Parity;
 use crate::subject;
 use crate::{File, Files, Segment};
 
@@ -15,7 +15,7 @@ use crate::{File, Files, Segment};
 ///
 /// Segments missing required attributes (`bytes`, `number`) or message IDs
 /// are skipped rather than causing a hard error.
-pub(crate) fn parse_files(nzb: &Document) -> Result<(Files, ParityFiles), ParseNzbError> {
+pub(crate) fn parse_files(nzb: &Document) -> Result<(Files, Parity), ParseNzbError> {
     let mut files = Vec::new();
 
     for node in nzb.root_element().children().filter(|n| n.has_tag_name("file")) {
@@ -107,5 +107,5 @@ pub(crate) fn parse_files(nzb: &Document) -> Result<(Files, ParityFiles), ParseN
         return Err(ParseNzbError::OnlyPar2Files);
     }
 
-    Ok((Files::from_payload_vec(payload)?, ParityFiles::from_vec(parity)))
+    Ok((Files::from_payload_vec(payload)?, Parity::from_vec(parity)))
 }
