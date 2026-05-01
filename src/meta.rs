@@ -187,10 +187,10 @@ mod tests {
             "#,
         );
 
-        assert_eq!(meta.title(), Some("My Title".into()));
+        assert_eq!(meta.title(), Some("My Title"));
         assert_eq!(meta.passwords(), vec!["secret"]);
         assert_eq!(meta.tags(), vec!["HD"]);
-        assert_eq!(meta.category(), Some("TV".into()));
+        assert_eq!(meta.category(), Some("TV"));
     }
 
     #[test]
