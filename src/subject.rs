@@ -15,7 +15,13 @@ fn split_once_trimmed<'a>(s: &'a str, delimiter: &str) -> Option<(&'a str, &'a s
 ///
 /// Leading and trailing whitespace is ignored.
 fn is_number(s: &str) -> bool {
-    s.trim().parse::<u64>().is_ok()
+    let s = s.as_bytes().trim_ascii();
+
+    if s.is_empty() {
+        return false;
+    }
+
+    s.iter().all(u8::is_ascii_digit)
 }
 
 /// Returns `true` if the string matches a counter format.
