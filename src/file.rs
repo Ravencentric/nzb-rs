@@ -1,4 +1,6 @@
 use chrono::{DateTime, Utc};
+use core::slice;
+use std::collections::BTreeSet;
 
 use crate::segment::Segment;
 use crate::subject;
@@ -115,5 +117,90 @@ impl File {
     /// Return [`true`] if the file is obfuscated, [`false`] otherwise.
     pub fn is_obfuscated(&self) -> bool {
         self.stem().is_none_or(subject::is_obfuscated)
+    }
+}
+
+#[derive(Clone, Debug, Default, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub struct Files(Vec<File>);
+
+impl Files {
+    pub fn iter(&self) -> slice::Iter<'_, File> {
+        self.0.iter()
+    }
+
+    /// The main content file (episode, movie, etc) in the NZB.
+    /// This is determined by finding the largest non `par2` file in the NZB
+    /// and may not always be accurate.
+    #[must_use]
+    pub fn primary(&self) -> &File {
+        self.iter()
+            .max_by_key(|file| file.size())
+            .expect("NZB should have at least one non-`.par2` file")
+    }
+
+    /// Total size of all the files.
+    #[must_use]
+    pub fn size(&self) -> u64 {
+        self.0.iter().map(File::size).sum()
+    }
+
+    /// Vector of unique file names across all the files in the NZB.
+    pub fn names(&self) -> impl Iterator<Item = &str> {
+        self.iter()
+            .filter_map(|f| f.name())
+            .collect::<BTreeSet<_>>()
+            .into_iter()
+    }
+
+    /// Vector of unique posters across all the files in the NZB.
+    pub fn posters(&self) -> impl Iterator<Item = &str> {
+        self.iter().map(|f| f.poster()).collect::<BTreeSet<_>>().into_iter()
+    }
+
+    /// Vector of unique groups across all the files in the NZB.
+    pub fn groups(&self) -> impl Iterator<Item = &str> {
+        self.iter()
+            .flat_map(|f| f.groups().iter().map(String::as_str))
+            .collect::<BTreeSet<_>>()
+            .into_iter()
+    }
+}
+
+//
+// ============================================================================
+//  IntoIterator
+// ============================================================================
+//
+impl<'a> IntoIterator for &'a Files {
+    type Item = &'a File;
+    type IntoIter = slice::Iter<'a, File>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        self.iter()
+    }
+}
+
+//
+// ============================================================================
+//  Serde
+// ============================================================================
+//
+#[cfg(feature = "serde")]
+impl serde::Serialize for Files {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        self.0.serialize(serializer)
+    }
+}
+
+#[cfg(feature = "serde")]
+impl<'de> serde::Deserialize<'de> for Files {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: serde::Deserializer<'de>,
+    {
+        Vec::<File>::deserialize(deserializer).map(Files)
     }
 }
