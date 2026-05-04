@@ -166,11 +166,10 @@ impl Files {
     }
 }
 
-//
-// ============================================================================
-//  IntoIterator
-// ============================================================================
-//
+/// # IntoIterator
+///
+/// We only implement IntoIterator for references because [`Files`] is
+/// read-only and should not be consumed during iteration.
 impl<'a> IntoIterator for &'a Files {
     type Item = &'a File;
     type IntoIter = slice::Iter<'a, File>;
@@ -180,11 +179,10 @@ impl<'a> IntoIterator for &'a Files {
     }
 }
 
-//
-// ============================================================================
-//  Serde
-// ============================================================================
-//
+/// # Serde
+///
+/// Serde is implemented manually so that [`Files`] behaves just like
+/// a [`Vec<File>`] upon (de)serialization.
 #[cfg(feature = "serde")]
 impl serde::Serialize for Files {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
